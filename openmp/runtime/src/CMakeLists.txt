@@ -346,7 +346,7 @@ add_dependencies(libomp-micro-tests libomp-test-deps)
 # We want to install libomp in DESTDIR/CMAKE_INSTALL_PREFIX/lib
 # We want to install headers in DESTDIR/CMAKE_INSTALL_PREFIX/include
 if(${OPENMP_STANDALONE_BUILD})
-  set(LIBOMP_HEADERS_INSTALL_PATH include)
+  set(LIBOMP_HEADERS_INSTALL_PATH include CACHE PATH "Install path for OpenMP headers")
 else()
   string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" CLANG_VERSION ${PACKAGE_VERSION})
   set(LIBOMP_HEADERS_INSTALL_PATH "${OPENMP_INSTALL_LIBDIR}/clang/${CLANG_VERSION}/include")
