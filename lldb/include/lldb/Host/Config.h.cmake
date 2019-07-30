@@ -35,4 +35,6 @@
 #cmakedefine HAVE_LIBCOMPRESSION
 #endif
 
+#cmakedefine LLDB_ENABLE_LZMA
+
 #endif // #ifndef LLDB_HOST_CONFIG_H

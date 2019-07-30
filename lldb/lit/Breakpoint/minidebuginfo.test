@@ -1,0 +1,58 @@
+# REQUIRES: system-linux, lzma
+
+# RUN: %clang -g -shared -fpic -o %T/mylib.so -I%p/Inputs %p/Inputs/minidebuginfo-lib.c
+# RUN: %clang -g -o %t.binary mylib.so %p/Inputs/minidebuginfo-main.c
+
+# The following section is adapted from GDB's official documentation:
+# http://sourceware.org/gdb/current/onlinedocs/gdb/MiniDebugInfo.html#MiniDebugInfo
+
+# Extract the dynamic symbols from the main binary, there is no need
+# to also have these in the normal symbol table.
+
+# RUN: llvm-nm -D %t.binary --format=posix --defined-only | awk '{ print $1 }' | sort > %t.dynsyms
+
+# Extract all the text (i.e. function) symbols from the debuginfo.
+# (Note that we actually also accept "D" symbols, for the benefit
+# of platforms like PowerPC64 that use function descriptors.)
+
+# RUN: llvm-nm %t.binary --format=posix --defined-only | awk '{ if ($2 == "T" || $2 == "t" || $2 == "D") print $1 }' | sort > %t.funcsyms
+
+# Keep all the function symbols not already in the dynamic symbol
+# table.
+
+# RUN: comm -13 %t.dynsyms %t.funcsyms > %t.keep_symbols
+
+# Separate full debug info into debug binary.
+
+# RUN: llvm-objcopy --only-keep-debug %t.binary %t.debug
+
+# Copy the full debuginfo, keeping only a minimal set of symbols and
+# removing some unnecessary sections.
+
+# RUN: llvm-objcopy -S --remove-section .gdb_index --remove-section .comment --keep-symbols=keep_symbols %t.debug %t.mini_debuginfo
+
+# Drop the full debug info from the original binary.
+
+# RUN: llvm-strip --strip-all -R .comment %t.binary
+
+# Inject the compressed data into the .gnu_debugdata section of the
+# original binary.
+
+# RUN: xz --force --keep %t.mini_debuginfo
+
+# RUN: llvm-objcopy --add-section .gnu_debugdata=%t.mini_debuginfo.xz %t.binary
+
+# Now run the binary and see that we can set and hit a breakpoint
+# from within the .dynsym section (multiplyByThree) and one from
+# the .symtab section embedded in the .gnu_debugdata section (multiplyByFour).
+
+# RUN: LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%T %lldb -x -b -o 'b multiplyByThree' -o 'b multiplyByFour' -o 'breakpoint list -v' -o 'run' -o 'continue' %t.binary | FileCheck %s
+
+# CHECK: (lldb) b multiplyByThree
+# CHECK-NEXT: Breakpoint 1: where = mylib.so`multiplyByThree + 7 at minidebuginfo-lib.c:4:13, address = 0x{{.*}}
+
+# CHECK: (lldb) b multiplyByFour
+# CHECK-NEXT: Breakpoint 2: where = minidebuginfo.test.tmp.binary`multiplyByFour, address = 0x{{.*}}
+
+# CHECK: * thread #1, name = 'minidebuginfo.t', stop reason = breakpoint 1.2
+# CHECK: * thread #1, name = 'minidebuginfo.t', stop reason = breakpoint 2.1

@@ -99,7 +99,7 @@ if(LLDB_INCLUDE_TESTS)
     message(FATAL_ERROR "LLDB test compilers not specified. Tests will not run.")
   endif()
 
-  set(LLDB_TEST_DEPS lldb)
+  set(LLDB_TEST_DEPS lldb llvm-nm llvm-strip)
 
   # darwin-debug is an hard dependency for the testsuite.
   if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
