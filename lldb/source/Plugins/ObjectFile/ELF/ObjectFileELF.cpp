@@ -1888,7 +1888,7 @@ std::shared_ptr<ObjectFileELF> ObjectFileELF::GetGnuDebugDataObjectFile() {
   auto err = lldb_private::lzma::uncompress(compressedData, uncompressedData);
   if (err) {
     GetModule()->ReportWarning(
-        "An error occured while decompression the section %s: %s",
+        "An error occurred while decompression the section %s: %s",
         section->GetName().AsCString(), llvm::toString(std::move(err)).c_str());
     return nullptr;
   }
