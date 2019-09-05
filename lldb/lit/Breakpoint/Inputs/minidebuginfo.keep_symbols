@@ -1,12 +1,1 @@
-__TMC_END__
-__data_start
-__do_global_dtors_aux
-__libc_csu_fini
-__libc_csu_init
-_dl_relocate_static_pie
-_start
-deregister_tm_clones
-frame_dummy
-main
 multiplyByFour
-register_tm_clones
