@@ -1,4 +1,4 @@
-# REQUIRES: system-linux, lzma
+# REQUIRES: system-linux, lzma, xz
 
 # RUN: %clang -g -shared -fpic -o %T/mylib.so -I%p/Inputs %p/Inputs/minidebuginfo-lib.c
 # RUN: %clang -g -o %t.binary mylib.so %p/Inputs/minidebuginfo-main.c
@@ -9,18 +9,19 @@
 # Extract the dynamic symbols from the main binary, there is no need
 # to also have these in the normal symbol table.
 
-# RUN: llvm-nm -D %t.binary --format=posix --defined-only | awk '{ print $1 }' | sort > %t.dynsyms
+# IGNORE: llvm-nm -D %t.binary --format=posix --defined-only | awk '{ print $1 }' | sort > %t.dynsyms
 
 # Extract all the text (i.e. function) symbols from the debuginfo.
 # (Note that we actually also accept "D" symbols, for the benefit
 # of platforms like PowerPC64 that use function descriptors.)
 
-# RUN: llvm-nm %t.binary --format=posix --defined-only | awk '{ if ($2 == "T" || $2 == "t" || $2 == "D") print $1 }' | sort > %t.funcsyms
+# IGNORE: llvm-nm %t.binary --format=posix --defined-only | awk '{ if ($2 == "T" || $2 == "t" || $2 == "D") print $1 }' | sort > %t.funcsyms
 
 # Keep all the function symbols not already in the dynamic symbol
 # table.
 
-# RUN: comm -13 %t.dynsyms %t.funcsyms > %t.keep_symbols
+# IGNORE: comm -13 %t.dynsyms %t.funcsyms > %t.keep_symbols
+# The result of the preceeding command is preprocessed in %p/Inputs/minidebuginfo.keep_symbols.
 
 # Separate full debug info into debug binary.
 
@@ -29,7 +30,7 @@
 # Copy the full debuginfo, keeping only a minimal set of symbols and
 # removing some unnecessary sections.
 
-# RUN: llvm-objcopy -S --remove-section .gdb_index --remove-section .comment --keep-symbols=keep_symbols %t.debug %t.mini_debuginfo
+# RUN: llvm-objcopy -S --remove-section .gdb_index --remove-section .comment --keep-symbols=%p/Inputs/minidebuginfo.keep_symbols %t.debug %t.mini_debuginfo
 
 # Drop the full debug info from the original binary.
 
