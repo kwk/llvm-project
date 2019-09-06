@@ -20,8 +20,8 @@ namespace lzma {
 
 #ifndef LLDB_ENABLE_LZMA
 bool isAvailable() { return false; }
-llvm::Error getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer,
-                                uint64_t &uncompressedSize) {
+llvm::Expected<uint64_t>
+getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer) {
   llvm_unreachable("lzma::getUncompressedSize is unavailable");
 }
 
@@ -63,8 +63,9 @@ static const char *convertLZMACodeToString(lzma_ret Code) {
   }
 }
 
-llvm::Error getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer,
-                                uint64_t &uncompressedSize) {
+llvm::Expected<uint64_t>
+getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer) {
+
   if (InputBuffer.size() == 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "size of xz-compressed blob cannot be 0");
@@ -111,12 +112,12 @@ llvm::Error getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer,
 
   // Get size of uncompressed file to construct an in-memory buffer of the
   // same size on the calling end (if needed).
-  uncompressedSize = lzma_index_uncompressed_size(xzindex);
+  uint64_t uncompressedSize = lzma_index_uncompressed_size(xzindex);
 
   // Deallocate xz index as it is no longer needed.
   lzma_index_end(xzindex, nullptr);
 
-  return llvm::Error::success();
+  return uncompressedSize;
 }
 
 llvm::Error uncompress(llvm::ArrayRef<uint8_t> InputBuffer,
@@ -125,12 +126,11 @@ llvm::Error uncompress(llvm::ArrayRef<uint8_t> InputBuffer,
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "size of xz-compressed blob cannot be 0");
 
-  uint64_t uncompressedSize = 0;
-  auto err = getUncompressedSize(InputBuffer, uncompressedSize);
-  if (err)
-    return err;
+  llvm::Expected<uint64_t> uncompressedSize = getUncompressedSize(InputBuffer);
+  if (uncompressedSize)
+    return uncompressedSize.takeError();
 
-  Uncompressed.resize(uncompressedSize);
+  Uncompressed.resize(*uncompressedSize);
 
   // Decompress xz buffer to buffer.
   uint64_t memlimit(UINT64_MAX);

@@ -21,8 +21,8 @@ namespace lzma {
 	
 bool isAvailable();
 
-llvm::Error getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer,
-                                uint64_t &uncompressedSize);
+llvm::Expected<uint64_t>
+getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer);
 
 llvm::Error uncompress(llvm::ArrayRef<uint8_t> InputBuffer,
                        llvm::SmallVectorImpl<uint8_t> &Uncompressed);
