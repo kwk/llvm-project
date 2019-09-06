@@ -10,7 +10,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-#ifdef LLDB_ENABLE_LZMA
+#if LLDB_ENABLE_LZMA
 #include <lzma.h>
 #endif // LLDB_ENABLE_LZMA
 
@@ -18,7 +18,7 @@ namespace lldb_private {
 
 namespace lzma {
 
-#ifndef LLDB_ENABLE_LZMA
+#if !LLDB_ENABLE_LZMA
 bool isAvailable() { return false; }
 llvm::Expected<uint64_t>
 getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer) {
@@ -70,7 +70,7 @@ getUncompressedSize(llvm::ArrayRef<uint8_t> InputBuffer) {
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "size of xz-compressed blob cannot be 0");
 
-  auto opts = lzma_stream_flags{};
+  lzma_stream_flags opts{};
   if (InputBuffer.size() < LZMA_STREAM_HEADER_SIZE) {
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
@@ -137,13 +137,13 @@ llvm::Error uncompress(llvm::ArrayRef<uint8_t> InputBuffer,
   size_t inpos = 0;
   inpos = 0;
   size_t outpos = 0;
-  auto xzerr = lzma_stream_buffer_decode(
+  lzma_ret ret = lzma_stream_buffer_decode(
       &memlimit, 0, nullptr, InputBuffer.data(), &inpos, InputBuffer.size(),
       Uncompressed.data(), &outpos, Uncompressed.size());
-  if (xzerr != LZMA_OK) {
+  if (ret != LZMA_OK) {
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "lzma_stream_buffer_decode()=%s",
-                                   convertLZMACodeToString(xzerr));
+                                   convertLZMACodeToString(ret));
   }
 
   return llvm::Error::success();

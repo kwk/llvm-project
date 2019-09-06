@@ -1847,19 +1847,18 @@ void ObjectFileELF::CreateSections(SectionList &unified_section_list) {
   // If there's a .gnu_debugdata section, we'll try to read the .symtab that's
   // embedded in there and replace the one in the original object file (if any).
   // If there's none in the orignal object file, we add it to it.
-  SectionList *module_section_list = GetModule()->GetSectionList();
   if (auto gdd_obj_file = GetGnuDebugDataObjectFile()) {
     if (auto gdd_objfile_section_list = gdd_obj_file->GetSectionList()) {
       if (SectionSP symtab_section_sp =
               gdd_objfile_section_list->FindSectionByType(
                   eSectionTypeELFSymbolTable, true)) {
-        SectionSP module_section_sp = module_section_list->FindSectionByType(
+        SectionSP module_section_sp = unified_section_list.FindSectionByType(
             eSectionTypeELFSymbolTable, true);
         if (module_section_sp)
-          module_section_list->ReplaceSection(module_section_sp->GetID(),
+          unified_section_list.ReplaceSection(module_section_sp->GetID(),
                                               symtab_section_sp);
         else
-          module_section_list->AddSection(symtab_section_sp);
+          unified_section_list.AddSection(symtab_section_sp);
       }
     }
   }  
@@ -1883,9 +1882,8 @@ std::shared_ptr<ObjectFileELF> ObjectFileELF::GetGnuDebugDataObjectFile() {
   // Uncompress the data
   DataExtractor data;
   section->GetSectionData(data);
-  llvm::ArrayRef<uint8_t> compressedData(data.GetDataStart(), data.GetByteSize());
   llvm::SmallVector<uint8_t, 0> uncompressedData;
-  auto err = lldb_private::lzma::uncompress(compressedData, uncompressedData);
+  auto err = lldb_private::lzma::uncompress(data.GetData(), uncompressedData);
   if (err) {
     GetModule()->ReportWarning(
         "An error occurred while decompression the section %s: %s",

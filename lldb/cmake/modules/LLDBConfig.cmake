@@ -338,6 +338,7 @@ cmake_dependent_option(LLDB_ENABLE_LZMA "Support LZMA compression" ON "LIBLZMA_F
 if (LLDB_ENABLE_LZMA)
   include_directories(${LIBLZMA_INCLUDE_DIRS})
 endif()
+llvm_canonicalize_cmake_booleans(LLDB_ENABLE_LZMA)
 
 include_directories(BEFORE
   ${CMAKE_CURRENT_BINARY_DIR}/include

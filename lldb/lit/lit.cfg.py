@@ -100,7 +100,7 @@ if 'native' in config.available_features:
 if not config.lldb_disable_python:
     config.available_features.add('python')
 
-if config.lldb_enable_lzma == "ON":
+if config.lldb_enable_lzma:
     config.available_features.add('lzma')
 
 if find_executable('xz') != None:
