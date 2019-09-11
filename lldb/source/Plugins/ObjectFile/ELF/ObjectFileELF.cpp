@@ -1871,7 +1871,8 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
                                      SectionList *section_list,
                                      const size_t num_symbols,
                                      const DataExtractor &symtab_data,
-                                     const DataExtractor &strtab_data) {
+                                     const DataExtractor &strtab_data,
+                                     UniqueElfSymbolColl &unique_elf_symbols) {
   ELFSymbol symbol;
   lldb::offset_t offset = 0;
 
@@ -2196,20 +2197,28 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         symbol_size_valid,              // Symbol size is valid
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
-    symtab->AddSymbol(dc_symbol);
+
+    NamedELFSymbol needle(symbol, ConstString(symbol_ref),
+                          symbol_section_sp.get() ? symbol_section_sp->GetName()
+                                                  : ConstString());
+    if (unique_elf_symbols.insert(needle).second) {
+      symtab->AddSymbol(dc_symbol);
+    }
   }
   return i;
 }
 
-unsigned ObjectFileELF::ParseSymbolTable(Symtab *symbol_table,
-                                         user_id_t start_id,
-                                         lldb_private::Section *symtab) {
+unsigned
+ObjectFileELF::ParseSymbolTable(Symtab *symbol_table, user_id_t start_id,
+                                lldb_private::Section *symtab,
+                                UniqueElfSymbolColl &unique_elf_symbols) {
   if (symtab->GetObjectFile() != this) {
     // If the symbol table section is owned by a different object file, have it
     // do the parsing.
     ObjectFileELF *obj_file_elf =
         static_cast<ObjectFileELF *>(symtab->GetObjectFile());
-    return obj_file_elf->ParseSymbolTable(symbol_table, start_id, symtab);
+    return obj_file_elf->ParseSymbolTable(symbol_table, start_id, symtab,
+                                          unique_elf_symbols);
   }
 
   // Get section list for this object file.
@@ -2237,7 +2246,7 @@ unsigned ObjectFileELF::ParseSymbolTable(Symtab *symbol_table,
       size_t num_symbols = symtab_data.GetByteSize() / symtab_hdr->sh_entsize;
 
       return ParseSymbols(symbol_table, start_id, section_list, num_symbols,
-                          symtab_data, strtab_data);
+                          symtab_data, strtab_data, unique_elf_symbols);
     }
   }
 
@@ -2405,7 +2414,7 @@ static unsigned ParsePLTRelocations(
         true,           // Size is valid
         false,          // Contains linker annotations?
         0);             // Symbol flags.
-
+    
     symbol_table->AddSymbol(jump_symbol);
   }
 
@@ -2644,22 +2653,35 @@ Symtab *ObjectFileELF::GetSymtab() {
 
     // Sharable objects and dynamic executables usually have 2 distinct symbol
     // tables, one named ".symtab", and the other ".dynsym". The dynsym is a
-    // smaller version of the symtab that only contains global symbols. The
-    // information found in the dynsym is therefore also found in the symtab,
-    // while the reverse is not necessarily true.
+    // smaller version of the symtab that only contains global symbols.
+    // Information in the dynsym section is *usually* also found in the symtab,
+    // but this is not required as symtab entries can be removed after linking.
+    // The minidebuginfo format makes use of this facility to create smaller
+    // symbol tables.
     Section *symtab =
         section_list->FindSectionByType(eSectionTypeELFSymbolTable, true).get();
-    if (!symtab) {
-      // The symtab section is non-allocable and can be stripped, so if it
-      // doesn't exist then use the dynsym section which should always be
-      // there.
-      symtab =
-          section_list->FindSectionByType(eSectionTypeELFDynamicSymbols, true)
-              .get();
-    }
+    
+    // A unique set of ELF symbols added to the symtab
+    UniqueElfSymbolColl unique_elf_symbols;
+
     if (symtab) {
       m_symtab_up.reset(new Symtab(symtab->GetObjectFile()));
-      symbol_id += ParseSymbolTable(m_symtab_up.get(), symbol_id, symtab);
+      symbol_id += ParseSymbolTable(m_symtab_up.get(), symbol_id, symtab,
+                                    unique_elf_symbols);
+    }
+
+    // The symtab section is non-allocable and can be stripped, while the dynsym
+    // section which should always be always be there. If both exist we load
+    // both to support the minidebuginfo case. Otherwise we just load the dynsym
+    // section.
+    Section *dynsym =
+        section_list->FindSectionByType(eSectionTypeELFDynamicSymbols, true)
+            .get();
+    if (dynsym) {
+      if (!m_symtab_up)
+        m_symtab_up.reset(new Symtab(dynsym->GetObjectFile()));
+      symbol_id += ParseSymbolTable(m_symtab_up.get(), symbol_id, dynsym,
+                                    unique_elf_symbols);
     }
 
     // DT_JMPREL

@@ -11,6 +11,7 @@
 #include "lldb/Core/Section.h"
 #include "lldb/Utility/DataExtractor.h"
 #include "lldb/Utility/Stream.h"
+#include "llvm/ADT/Hashing.h"
 
 #include "ELFHeader.h"
 
@@ -351,6 +352,28 @@ bool ELFSymbol::Parse(const lldb_private::DataExtractor &data,
       return false;
   }
   return true;
+}
+
+// NamedELFSymbol
+
+NamedELFSymbol::NamedELFSymbol(const ELFSymbol &other,
+                               lldb_private::ConstString symbol_name,
+                               lldb_private::ConstString section_name)
+    : ELFSymbol(other), st_name_string(symbol_name),
+      st_section_name_string(section_name) {}
+
+bool NamedELFSymbol::operator==(const NamedELFSymbol &rhs) const noexcept {
+  return st_value == rhs.st_value && st_size == rhs.st_size &&
+         st_info == rhs.st_info && st_other == rhs.st_other &&
+         st_name_string == rhs.st_name_string &&
+         st_section_name_string == rhs.st_section_name_string;
+}
+
+std::size_t NamedELFSymbol::hash() const noexcept {
+  // ignore the name and section index when hashing the ELFSymbol
+  return llvm::hash_combine(st_value, st_size, st_info, st_other,
+                            st_name_string.AsCString(),
+                            st_section_name_string.AsCString());
 }
 
 // ELFProgramHeader

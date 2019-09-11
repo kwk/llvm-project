@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include <vector>
+#include <unordered_set>
 
 #include "lldb/Symbol/ObjectFile.h"
 #include "lldb/Utility/ArchSpec.h"
@@ -184,6 +185,8 @@ private:
 
   typedef std::map<lldb::addr_t, lldb_private::AddressClass>
       FileAddressToAddressClassMap;
+  
+  typedef std::unordered_set<elf::NamedELFSymbol> UniqueElfSymbolColl;
 
   /// Version of this reader common to all plugins based on this class.
   static const uint32_t m_plugin_version = 1;
@@ -278,7 +281,8 @@ private:
   /// will parse the symbols only once.  Returns the number of symbols parsed.
   unsigned ParseSymbolTable(lldb_private::Symtab *symbol_table,
                             lldb::user_id_t start_id,
-                            lldb_private::Section *symtab);
+                            lldb_private::Section *symtab,
+                            UniqueElfSymbolColl &unique_elf_symbols);
 
   /// Helper routine for ParseSymbolTable().
   unsigned ParseSymbols(lldb_private::Symtab *symbol_table,
@@ -286,7 +290,8 @@ private:
                         lldb_private::SectionList *section_list,
                         const size_t num_symbols,
                         const lldb_private::DataExtractor &symtab_data,
-                        const lldb_private::DataExtractor &strtab_data);
+                        const lldb_private::DataExtractor &strtab_data,
+                        UniqueElfSymbolColl &unique_elf_symbols);
 
   /// Scans the relocation entries and adds a set of artificial symbols to the
   /// given symbol table for each PLT slot.  Returns the number of symbols

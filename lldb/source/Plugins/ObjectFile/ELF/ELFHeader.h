@@ -24,6 +24,7 @@
 
 #include "lldb/lldb-enumerations.h"
 #include "lldb/lldb-types.h"
+#include "lldb/Utility/ConstString.h"
 
 namespace lldb_private {
 class DataExtractor;
@@ -271,6 +272,32 @@ struct ELFSymbol {
             const lldb_private::SectionList *section_list);
 };
 
+/// A \c NamedELFSymbol is an ELFSymbol that, alongside it's name and section
+/// index, stores the name of the symbol and section as a string and only uses
+/// those for comparison instead of the name or section index which could differ
+/// depending on which section the symbol is defined in (e.g. .strtab or
+/// .dynstr) or which object file a section belongs to (see .gnu_debugdata).
+struct NamedELFSymbol : ELFSymbol {
+  lldb_private::ConstString st_name_string; ///< Actual name of the ELF symbol
+  lldb_private::ConstString
+      st_section_name_string; ///< Actual name of the section
+
+  NamedELFSymbol(const ELFSymbol &sym, lldb_private::ConstString symbol_name,
+                 lldb_private::ConstString section_name);
+
+  /// \returns \c true when all fields (except name and section indexes) of the
+  /// right hand side object are the same as the once of this object; otherwise
+  /// \c false is returned. We ignore the name and section index in order to
+  /// only compare actual name strings and not where strings are located.
+  bool operator==(const NamedELFSymbol &rhs) const noexcept;
+
+  /// \c returns a combined hash value for the given \c NamedELFSymbol over all
+  /// struct fields but ignores the name and section index of the base struct in
+  /// order to only compare actual name strings and not where strings are
+  /// located.
+  std::size_t hash() const noexcept;
+};
+
 /// \class ELFDynamic
 /// Represents an entry in an ELF dynamic table.
 struct ELFDynamic {
@@ -390,5 +417,15 @@ struct ELFRela {
 };
 
 } // End namespace elf.
+
+namespace std {
+/// Define specializations of the std::hash struct for NamedELFSymbol so they
+/// can be used in an std::unordered_set.
+template <> struct hash<elf::NamedELFSymbol> {
+    std::size_t operator()(const elf::NamedELFSymbol &s) const noexcept {
+      return s.hash();
+    }
+};
+} // namespace std
 
 #endif // #ifndef liblldb_ELFHeader_h_

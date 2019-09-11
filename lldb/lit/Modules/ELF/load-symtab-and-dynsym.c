@@ -1,0 +1,59 @@
+// REQUIRES: system-linux
+
+// This test ensures that we will load .dynsym even if there's a .symtab section.
+// We do this by compiling a small C program with two functions and we direct the
+// linker where to put the symbols so that in the end the layout is as follows:
+//
+//   Symbol table '.dynsym' contains 4 entries:
+//   Num:    Value          Size Type    Bind   Vis      Ndx Name
+//     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+//     1: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@GLIBC_2.2.5
+//     2: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
+//     3: 0000000000401120    13 FUNC    GLOBAL DEFAULT   10 functionInDynsym
+//   
+//   Symbol table '.symtab' contains 2 entries:
+//   Num:    Value          Size Type    Bind   Vis      Ndx Name
+//     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+//     1: 0000000000401110    15 FUNC    GLOBAL DEFAULT   10 functionInSymtab
+
+// We want to keep the symbol "functionInDynsym" in the .dynsym section and not
+// have it put the default .symtab section.
+// RUN: echo "{functionInDynsym;};" > %T/dynamic-symbols.txt
+// RUN: %clang -Wl,--dynamic-list=%T/dynamic-symbols.txt -g -o %t.binary %s
+
+// Remove not needed symbols
+// RUN: echo "functionInSymtab" > %t.keep_symbols
+// RUN: echo "functionInDynsym" >> %t.keep_symbols
+// RUN: llvm-objcopy --strip-all --remove-section .gdb_index --remove-section .comment --keep-symbols=%t.keep_symbols %t.binary
+
+// Remove functionInDynsym symbol from .symtab (will leave symbol in .dynsym intact)
+// RUN: llvm-strip --strip-symbol=functionInDynsym %t.binary
+
+// RUN: %lldb -b -o 'b functionInSymtab' -o 'b functionInDynsym' -o 'run' -o 'continue' %t.binary | FileCheck %s
+
+// CHECK: (lldb) b functionInSymtab
+// CHECK-NEXT: Breakpoint 1: where = {{.*}}.binary`functionInSymtab, address = 0x{{.*}}
+
+// CHECK: (lldb) b functionInDynsym
+// CHECK-NEXT: Breakpoint 2: where = {{.*}}.binary`functionInDynsym, address = 0x{{.*}}
+
+// CHECK: (lldb) run
+// CHECK-NEXT: Process {{.*}} stopped
+// CHECK-NEXT: * thread #1, name = 'load-symtab-and', stop reason = breakpoint 1.1
+
+// CHECK: (lldb) continue
+// CHECK-NEXT: Process {{.*}} resuming
+// CHECK-NEXT: Process {{.*}} stopped
+// CHECK-NEXT: * thread #1, name = 'load-symtab-and', stop reason = breakpoint 2.1
+
+// This function will be embedded within the .symtab section of the main binary.
+int functionInSymtab(int num) { return num * 4; }
+
+// This function will be embedded within the .dynsym section of the main binary.
+int functionInDynsym(int num) { return num * 3; }
+
+int main(int argc, char *argv[]) {
+  int x = functionInSymtab(argc);
+  int y = functionInDynsym(x);
+  return y;
+}
