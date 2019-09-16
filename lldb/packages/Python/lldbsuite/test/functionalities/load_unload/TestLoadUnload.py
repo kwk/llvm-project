@@ -273,7 +273,7 @@ class LoadUnloadTestCase(TestBase):
             "a_function should not exist yet",
             error=True,
             matching=False,
-            patterns=["2 matches found"])
+            patterns=["1 match found"])
 
         # Use lldb 'process load' to load the dylib.
         self.expect(
@@ -298,7 +298,7 @@ class LoadUnloadTestCase(TestBase):
             "image lookup -n a_function",
             "a_function should now exist",
             patterns=[
-                "2 matches found .*%s" %
+                "1 match found .*%s" %
                 dylibName])
 
         # Use lldb 'process unload' to unload the dylib.
