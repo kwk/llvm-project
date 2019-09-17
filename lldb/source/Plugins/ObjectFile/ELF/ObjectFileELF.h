@@ -222,8 +222,9 @@ private:
   /// The address class for each symbol in the elf file
   FileAddressToAddressClassMap m_address_class_map;
 
-  /// A unique set of (mangled symbol name, type) pairs
-  std::vector<std::pair<lldb_private::ConstString, lldb::SymbolType>>
+  /// A unique set of (mangled symbol name, type, address) tuple
+  std::vector<std::tuple<lldb_private::ConstString, lldb::SymbolType,
+                         lldb_private::Address>>
       m_unique_symbol_set;
 
   /// Returns the index of the given section header.

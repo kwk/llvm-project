@@ -2197,11 +2197,11 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
 
-    auto pair = std::make_pair(dc_symbol.GetName(), dc_symbol.GetType());
+    auto tuple = std::make_tuple(dc_symbol.GetName(), dc_symbol.GetType(), dc_symbol.GetAddressRef());
     if (std::find(m_unique_symbol_set.begin(), m_unique_symbol_set.end(),
-                  pair) == m_unique_symbol_set.end()) {
+                  tuple) == m_unique_symbol_set.end()) {
       symtab->AddSymbol(dc_symbol);
-      m_unique_symbol_set.push_back(std::move(pair));
+      m_unique_symbol_set.push_back(std::move(tuple));
     }
   }
   return i;
