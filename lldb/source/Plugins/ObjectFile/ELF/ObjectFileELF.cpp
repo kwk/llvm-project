@@ -2196,7 +2196,13 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         symbol_size_valid,              // Symbol size is valid
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
-    symtab->AddSymbol(dc_symbol);
+
+    auto pair = std::make_pair(dc_symbol.GetName(), dc_symbol.GetType());
+    if (std::find(m_unique_symbol_set.begin(), m_unique_symbol_set.end(),
+                  pair) == m_unique_symbol_set.end()) {
+      symtab->AddSymbol(dc_symbol);
+      m_unique_symbol_set.push_back(std::move(pair));
+    }
   }
   return i;
 }
