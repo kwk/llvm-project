@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include <vector>
+#include <utility>
 
 #include "lldb/Symbol/ObjectFile.h"
 #include "lldb/Utility/ArchSpec.h"
@@ -220,6 +221,10 @@ private:
 
   /// The address class for each symbol in the elf file
   FileAddressToAddressClassMap m_address_class_map;
+
+  /// A unique set of (mangled symbol name, type) pairs
+  std::vector<std::pair<lldb_private::ConstString, lldb::SymbolType>>
+      m_unique_symbol_set;
 
   /// Returns the index of the given section header.
   size_t SectionIndex(const SectionHeaderCollIter &I);
