@@ -39,6 +39,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/MipsABIFlags.h"
+#include "lldb/Utility/StreamString.h"
 
 #define CASE_AND_STREAM(s, def, width)                                         \
   case def:                                                                    \
@@ -2196,13 +2197,34 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         symbol_size_valid,              // Symbol size is valid
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
-
-    auto tuple = std::make_tuple(dc_symbol.GetName(), dc_symbol.GetType(), dc_symbol.GetAddressRef());
+    
+//    fprintf(stderr,
+//            "Symbol1: %s byte-size: %lu file-address: %lu offset: %lu "
+//            "display-name: %s, type: %s ",
+//            dc_symbol.GetName().AsCString("n/a"), dc_symbol.GetByteSize(),
+//            dc_symbol.GetAddress().GetFileAddress(),
+//            dc_symbol.GetAddress().GetOffset(),
+//            dc_symbol.GetDisplayName().AsCString("n/a"),
+//            dc_symbol.GetTypeAsString());
+    
+//    StreamString ss;
+//    dc_symbol.Dump(&ss, nullptr, 0);
+//    ss.Flush();
+//    fprintf(stderr, "Dump: %s\n", ss.GetData());
+    
+    
+    auto tuple = std::make_tuple(dc_symbol.GetName(), dc_symbol.GetType(),
+                                 dc_symbol.GetAddress().GetFileAddress(),
+                                 dc_symbol.GetByteSize());
     if (std::find(m_unique_symbol_set.begin(), m_unique_symbol_set.end(),
                   tuple) == m_unique_symbol_set.end()) {
-      symtab->AddSymbol(dc_symbol);
+//      symtab->AddSymbol(dc_symbol);
       m_unique_symbol_set.push_back(std::move(tuple));
+      fprintf(stderr, "added\n");
+    } else {
+      fprintf(stderr, "skipped\n");
     }
+    symtab->AddSymbol(dc_symbol);
   }
   return i;
 }

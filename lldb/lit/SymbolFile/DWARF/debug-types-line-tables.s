@@ -1,7 +1,7 @@
 # REQUIRES: x86
 
 # RUN: llvm-mc -filetype=obj -triple x86_64-pc-linux %s -o %t
-# RUN: lldb-test symbols %t | FileCheck %s
+# RUN: lldb-test symbols %t | FileCheck -v --color --dump-input=always %s
 
         .file   1 "/tmp" "b.cc"
 
@@ -77,7 +77,7 @@
 
 # Type unit four: "struct D".
 # DW_AT_stmt_list invalid
-# CHECK-DAG: name = "D", size = 4, line = 4
+# CHECK-DAG: name = "D", size = 4, decl = b.cc:4
 1:
         .long   4f-2f                   # Length of Unit
 2:
