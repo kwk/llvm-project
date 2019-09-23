@@ -39,6 +39,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/MipsABIFlags.h"
+#include "lldb/Utility/StreamString.h"
 
 #define CASE_AND_STREAM(s, def, width)                                         \
   case def:                                                                    \
@@ -2197,12 +2198,38 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
 
-    auto tuple = std::make_tuple(dc_symbol.GetName(), dc_symbol.GetType(), dc_symbol.GetAddressRef());
+    auto tuple = std::make_tuple(dc_symbol.GetName(), dc_symbol.GetType(),
+                                 dc_symbol.GetAddress().GetFileAddress(),
+                                 dc_symbol.GetByteSize());
+    fprintf(stderr,
+            "Symbol1: %s byte-size: %lu file-address: %lu offset: %lu "
+            "display-name: %s, type: %s ",
+            dc_symbol.GetName().AsCString("n/a"), dc_symbol.GetByteSize(),
+            dc_symbol.GetAddress().GetFileAddress(),
+            dc_symbol.GetAddress().GetOffset(),
+            dc_symbol.GetDisplayName().AsCString("n/a"),
+            dc_symbol.GetTypeAsString());
+    
+//    auto s = dc_symbol;
+//    fprintf(stderr, "[%5lu] %6u %c%c%c %-15s \n", i + start_id, s.GetID(),
+//            s.IsDebug() ? 'D' : ' ', s.IsSynthetic() ? 'S' : ' ',
+//            s.IsExternal() ? 'X' : ' ', s.GetTypeAsString());
+    StreamString ss;
+    dc_symbol.Dump(&ss, nullptr, 0);
+    ss.Flush();
+    fprintf(stderr, "Dump: %s\n", ss.GetData());
+    
+    
+
     if (std::find(m_unique_symbol_set.begin(), m_unique_symbol_set.end(),
                   tuple) == m_unique_symbol_set.end()) {
       symtab->AddSymbol(dc_symbol);
       m_unique_symbol_set.push_back(std::move(tuple));
+      fprintf(stderr, "added\n");
+    } else {
+      fprintf(stderr, "skipped\n");
     }
+    //symtab->AddSymbol(dc_symbol);
   }
   return i;
 }
@@ -2413,6 +2440,14 @@ static unsigned ParsePLTRelocations(
         0);             // Symbol flags.
 
     symbol_table->AddSymbol(jump_symbol);
+    fprintf(stderr,
+            "Symbol2: %s byte-size: %lu file-address: %lu offset: %lu "
+            "display-name: %s, type: %s ",
+            jump_symbol.GetName().AsCString("n/a"), jump_symbol.GetByteSize(),
+            jump_symbol.GetAddress().GetFileAddress(),
+            jump_symbol.GetAddress().GetOffset(),
+            jump_symbol.GetDisplayName().AsCString("n/a"),
+            jump_symbol.GetTypeAsString());
   }
 
   return i;
@@ -2671,8 +2706,7 @@ Symtab *ObjectFileELF::GetSymtab() {
             .get();
     if (dynsym) {
       if (!m_symtab_up) {
-        auto sec = symtab ? symtab : dynsym;
-        m_symtab_up.reset(new Symtab(sec->GetObjectFile()));
+        m_symtab_up.reset(new Symtab(dynsym->GetObjectFile()));
       }
       symbol_id += ParseSymbolTable(m_symtab_up.get(), symbol_id, dynsym);
     }
@@ -2809,6 +2843,14 @@ void ObjectFileELF::ParseUnwindSymbols(Symtab *symbol_table,
             false, // Contains linker annotations?
             0);    // Symbol flags.
         new_symbols.push_back(eh_symbol);
+        fprintf(stderr,
+                "Symbol3: %s byte-size: %lu file-address: %lu offset: %lu "
+                "display-name: %s, type: %s ",
+                eh_symbol.GetName().AsCString("n/a"), eh_symbol.GetByteSize(),
+                eh_symbol.GetAddress().GetFileAddress(),
+                eh_symbol.GetAddress().GetOffset(),
+                eh_symbol.GetDisplayName().AsCString("n/a"),
+                eh_symbol.GetTypeAsString());
       }
     }
     return true;

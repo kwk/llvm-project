@@ -507,6 +507,7 @@ uint32_t SymbolFileDWARF::CalculateAbilities() {
         debug_abbrev_file_size = section->GetFileSize();
 
       DWARFDebugAbbrev *abbrev = DebugAbbrev();
+      fprintf(stderr, "\n\nYESSSSSS\n\n");
       if (abbrev) {
         std::set<dw_form_t> invalid_forms;
         abbrev->GetUnsupportedForms(invalid_forms);

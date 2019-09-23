@@ -77,7 +77,7 @@
 
 # Type unit four: "struct D".
 # DW_AT_stmt_list invalid
-# CHECK-DAG: name = "D", size = 4, line = 4
+# CHECK-DAG: name = "D", size = 4, decl = b.cc:4
 1:
         .long   4f-2f                   # Length of Unit
 2:

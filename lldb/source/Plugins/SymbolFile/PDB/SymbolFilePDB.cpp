@@ -1419,22 +1419,30 @@ void SymbolFilePDB::AddSymbols(lldb_private::Symtab &symtab) {
     sym_addresses.insert(file_addr);
 
     auto size = pub_symbol->getLength();
-    symtab.AddSymbol(
-        Symbol(pub_symbol->getSymIndexId(),   // symID
-               pub_symbol->getName().c_str(), // name
-               true,                          // name_is_mangled
-               pub_symbol->isCode() ? eSymbolTypeCode : eSymbolTypeData, // type
-               true,      // external
-               false,     // is_debug
-               false,     // is_trampoline
-               false,     // is_artificial
-               section,   // section_sp
-               offset,    // value
-               size,      // size
-               size != 0, // size_is_valid
-               false,     // contains_linker_annotations
-               0          // flags
-               ));
+    auto s = Symbol(pub_symbol->getSymIndexId(),   // symID
+                    pub_symbol->getName().c_str(), // name
+                    true,                          // name_is_mangled
+                    pub_symbol->isCode() ? eSymbolTypeCode : eSymbolTypeData, // type
+                    true,      // external
+                    false,     // is_debug
+                    false,     // is_trampoline
+                    false,     // is_artificial
+                    section,   // section_sp
+                    offset,    // value
+                    size,      // size
+                    size != 0, // size_is_valid
+                    false,     // contains_linker_annotations
+                    0          // flags
+                    );
+    symtab.AddSymbol(s);
+    fprintf(stderr,
+            "Symbol5: %s byte-size: %lu file-address: %lu offset: %lu "
+            "display-name: %s, type: %s ",
+            s.GetName().AsCString("n/a"), s.GetByteSize(),
+            s.GetAddress().GetFileAddress(),
+            s.GetAddress().GetOffset(),
+            s.GetDisplayName().AsCString("n/a"),
+            s.GetTypeAsString());
   }
 
   symtab.CalculateSymbolSizes();

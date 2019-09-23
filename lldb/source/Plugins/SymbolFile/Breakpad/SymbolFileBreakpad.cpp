@@ -369,8 +369,18 @@ void SymbolFileBreakpad::AddSymbols(Symtab &symtab) {
       LLDB_LOG(log, "Failed to parse: {0}. Skipping record.", line);
   }
 
-  for (auto &KV : symbols)
+  for (auto &KV : symbols) {
+      fprintf(stderr,
+              "Symbol4: %s byte-size: %lu file-address: %lu offset: %lu "
+              "display-name: %s, type: %s ",
+              KV.second.GetName().AsCString("n/a"), KV.second.GetByteSize(),
+              KV.second.GetAddress().GetFileAddress(),
+              KV.second.GetAddress().GetOffset(),
+              KV.second.GetDisplayName().AsCString("n/a"),
+              KV.second.GetTypeAsString());
     symtab.AddSymbol(std::move(KV.second));
+    
+    }
   symtab.CalculateSymbolSizes();
 }
 

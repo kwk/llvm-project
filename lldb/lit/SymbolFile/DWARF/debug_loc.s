@@ -6,7 +6,7 @@
 
 # RUN: llvm-mc -triple=x86_64-pc-linux -filetype=obj %s > %t
 # RUN: %lldb %t -o "image lookup -v -a 0" -o "image lookup -v -a 2" -o exit \
-# RUN:   | FileCheck %s
+# RUN:   | FileCheck -v --color --dump-input=always  %s
 
 # CHECK-LABEL: image lookup -v -a 0
 # CHECK: Variable: {{.*}}, name = "x0", type = "int", location = rdi,
