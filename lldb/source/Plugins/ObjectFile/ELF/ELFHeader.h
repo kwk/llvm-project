@@ -281,11 +281,12 @@ struct NamedELFSymbol : ELFSymbol {
   lldb_private::ConstString st_name_string; ///< Actual name of the ELF symbol
   lldb_private::ConstString
       st_section_name_string; ///< Actual name of the section
+  unsigned st_user_id;
 
   NamedELFSymbol();
   
   NamedELFSymbol(const ELFSymbol &sym, lldb_private::ConstString symbol_name,
-                 lldb_private::ConstString section_name);
+                 lldb_private::ConstString section_name, unsigned user_id);
 
   /// \returns \c true when all fields (except name and section indexes) of the
   /// right hand side object are the same as the ones of this object; otherwise

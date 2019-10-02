@@ -1941,7 +1941,7 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
     unique_elf_symbols.emplace_back(
         NamedELFSymbol(symbol, ConstString(symbol_name),
                        symbol_section_sp.get() ? symbol_section_sp->GetName()
-                                               : ConstString()));
+                                               : ConstString()), i);
   }
 
   // Make elements in vector unique and then add then iterate over them to add
@@ -2207,7 +2207,7 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         symbol.st_size != 0 || symbol.getType() != STT_FUNC;
 
     Symbol dc_symbol(
-        j + start_id, // ID is the original symbol table index.
+        symbol.st_user_id + start_id, // ID is the original symbol table index.
         mangled,
         symbol_type,                    // Type of this symbol
         is_global,                      // Is this globally visible?

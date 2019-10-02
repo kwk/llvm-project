@@ -360,9 +360,10 @@ NamedELFSymbol::NamedELFSymbol() {}
 
 NamedELFSymbol::NamedELFSymbol(const ELFSymbol &other,
                                lldb_private::ConstString symbol_name,
-                               lldb_private::ConstString section_name)
+                               lldb_private::ConstString section_name,
+                               unsigned user_id)
     : ELFSymbol(other), st_name_string(symbol_name),
-      st_section_name_string(section_name) {}
+      st_section_name_string(section_name), st_user_id(user_id) {}
 
 bool NamedELFSymbol::operator==(const NamedELFSymbol &rhs) const noexcept {
   return st_value == rhs.st_value && st_size == rhs.st_size &&
