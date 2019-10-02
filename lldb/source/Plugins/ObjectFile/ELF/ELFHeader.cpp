@@ -356,6 +356,8 @@ bool ELFSymbol::Parse(const lldb_private::DataExtractor &data,
 
 // NamedELFSymbol
 
+NamedELFSymbol::NamedELFSymbol() {}
+
 NamedELFSymbol::NamedELFSymbol(const ELFSymbol &other,
                                lldb_private::ConstString symbol_name,
                                lldb_private::ConstString section_name)

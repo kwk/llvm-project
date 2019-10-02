@@ -282,6 +282,8 @@ struct NamedELFSymbol : ELFSymbol {
   lldb_private::ConstString
       st_section_name_string; ///< Actual name of the section
 
+  NamedELFSymbol();
+  
   NamedELFSymbol(const ELFSymbol &sym, lldb_private::ConstString symbol_name,
                  lldb_private::ConstString section_name);
 
