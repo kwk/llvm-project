@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 #include <vector>
-#include <unordered_set>
 
 #include "lldb/Symbol/ObjectFile.h"
 #include "lldb/Utility/ArchSpec.h"
@@ -186,7 +185,7 @@ private:
   typedef std::map<lldb::addr_t, lldb_private::AddressClass>
       FileAddressToAddressClassMap;
   
-  typedef std::unordered_set<elf::NamedELFSymbol> UniqueElfSymbolColl;
+  typedef std::vector<elf::NamedELFSymbol> UniqueElfSymbolColl;
 
   /// Version of this reader common to all plugins based on this class.
   static const uint32_t m_plugin_version = 1;

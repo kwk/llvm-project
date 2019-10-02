@@ -369,13 +369,6 @@ bool NamedELFSymbol::operator==(const NamedELFSymbol &rhs) const noexcept {
          st_section_name_string == rhs.st_section_name_string;
 }
 
-std::size_t NamedELFSymbol::hash() const noexcept {
-  // ignore the name and section index when hashing the ELFSymbol
-  return llvm::hash_combine(st_value, st_size, st_info, st_other,
-                            st_name_string.AsCString(),
-                            st_section_name_string.AsCString());
-}
-
 // ELFProgramHeader
 
 ELFProgramHeader::ELFProgramHeader() {

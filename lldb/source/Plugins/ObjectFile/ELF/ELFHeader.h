@@ -290,12 +290,6 @@ struct NamedELFSymbol : ELFSymbol {
   /// \c false is returned. We ignore the name and section index in order to
   /// only compare actual name strings and not where strings are located.
   bool operator==(const NamedELFSymbol &rhs) const noexcept;
-
-  /// \c returns a combined hash value for the given \c NamedELFSymbol over all
-  /// struct fields but ignores the name and section index of the base struct in
-  /// order to only compare actual name strings and not where strings are
-  /// located.
-  std::size_t hash() const noexcept;
 };
 
 /// \class ELFDynamic
@@ -417,15 +411,5 @@ struct ELFRela {
 };
 
 } // End namespace elf.
-
-namespace std {
-/// Define specializations of the std::hash struct for NamedELFSymbol so they
-/// can be used in an std::unordered_set.
-template <> struct hash<elf::NamedELFSymbol> {
-    std::size_t operator()(const elf::NamedELFSymbol &s) const noexcept {
-      return s.hash();
-    }
-};
-} // namespace std
 
 #endif // #ifndef liblldb_ELFHeader_h_

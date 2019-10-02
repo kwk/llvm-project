@@ -1913,6 +1913,7 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
   // pointer
   std::unordered_map<const char *, lldb::SectionSP> section_name_to_section;
 
+  unique_elf_symbols.reserve(unique_elf_symbols.size() + num_symbols);
   unsigned i;
   for (i = 0; i < num_symbols; ++i) {
     if (!symbol.Parse(symtab_data, &offset))
@@ -1932,6 +1933,27 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
     if (skip_oatdata_oatexec && (::strcmp(symbol_name, "oatdata") == 0 ||
                                  ::strcmp(symbol_name, "oatexec") == 0))
       continue;
+    
+    SectionSP symbol_section_sp;
+    if (symbol.st_shndx != SHN_ABS && symbol.st_shndx != SHN_UNDEF)
+        symbol_section_sp = section_list->FindSectionByID(symbol.st_shndx);
+    
+    NamedELFSymbol named_sym(symbol, ConstString(symbol_name),
+                          symbol_section_sp.get() ? symbol_section_sp->GetName()
+                                                  : ConstString());
+    unique_elf_symbols.push_back(named_sym);
+  }
+
+  // Make elements in vector unique and then add then iterate over them to add
+  // them to the symtab.
+  std::sort(unique_elf_symbols.begin(), unique_elf_symbols.end());
+  unique_elf_symbols.resize(static_cast<UniqueElfSymbolColl::size_type>(
+      std::unique(unique_elf_symbols.begin(), unique_elf_symbols.end()) -
+      unique_elf_symbols.begin()));
+
+  std::lock_guard<std::recursive_mutex> guard(symtab->GetMutex());
+  for (auto symbol : unique_elf_symbols) {
+    const char *symbol_name = symbol.st_name_string.AsCString();
 
     SectionSP symbol_section_sp;
     SymbolType symbol_type = eSymbolTypeInvalid;
@@ -1948,7 +1970,7 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
       symbol_section_sp = section_list->FindSectionByID(shndx);
       break;
     }
-
+    
     // If a symbol is undefined do not process it further even if it has a STT
     // type
     if (symbol_type != eSymbolTypeUndefined) {
@@ -2144,12 +2166,12 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
       if (section_it->second)
         symbol_section_sp = section_it->second;
     }
+      
+    llvm::StringRef symbol_ref(symbol_name);
 
     bool is_global = symbol.getBinding() == STB_GLOBAL;
     uint32_t flags = symbol.st_other << 8 | symbol.st_info | additional_flags;
     bool is_mangled = (symbol_name[0] == '_' && symbol_name[1] == 'Z');
-
-    llvm::StringRef symbol_ref(symbol_name);
 
     // Symbol names may contain @VERSION suffixes. Find those and strip them
     // temporarily.
@@ -2198,13 +2220,9 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         has_suffix,                     // Contains linker annotations?
         flags);                         // Symbol flags.
 
-    NamedELFSymbol needle(symbol, ConstString(symbol_ref),
-                          symbol_section_sp.get() ? symbol_section_sp->GetName()
-                                                  : ConstString());
-    if (unique_elf_symbols.insert(needle).second) {
-      symtab->AddSymbol(dc_symbol);
-    }
+    symtab->AddSymbol(dc_symbol);
   }
+
   return i;
 }
 
@@ -2383,6 +2401,7 @@ static unsigned ParsePLTRelocations(
 
   unsigned slot_type = hdr->GetRelocationJumpSlotType();
   unsigned i;
+  std::lock_guard<std::recursive_mutex> guard(symbol_table->GetMutex());
   for (i = 0; i < num_relocations; ++i) {
     if (!rel.Parse(rel_data, &offset))
       break;
@@ -2414,7 +2433,6 @@ static unsigned ParsePLTRelocations(
         true,           // Size is valid
         false,          // Contains linker annotations?
         0);             // Symbol flags.
-    
     symbol_table->AddSymbol(jump_symbol);
   }
 
@@ -2821,6 +2839,7 @@ void ObjectFileELF::ParseUnwindSymbols(Symtab *symbol_table,
     return true;
   });
 
+  std::lock_guard<std::recursive_mutex> guard(symbol_table->GetMutex());
   for (const Symbol &s : new_symbols)
     symbol_table->AddSymbol(s);
 }
