@@ -369,6 +369,13 @@ bool NamedELFSymbol::operator==(const NamedELFSymbol &rhs) const noexcept {
          st_section_name_string == rhs.st_section_name_string;
 }
 
+bool NamedELFSymbol::operator<(const NamedELFSymbol &rhs) const noexcept {
+  return st_value < rhs.st_value && st_size < rhs.st_size &&
+         st_info < rhs.st_info && st_other < rhs.st_other &&
+         st_name_string < rhs.st_name_string &&
+         st_section_name_string < rhs.st_section_name_string;
+}
+
 // ELFProgramHeader
 
 ELFProgramHeader::ELFProgramHeader() {

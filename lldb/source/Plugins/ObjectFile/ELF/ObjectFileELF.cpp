@@ -1938,10 +1938,10 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
     if (symbol.st_shndx != SHN_ABS && symbol.st_shndx != SHN_UNDEF)
         symbol_section_sp = section_list->FindSectionByID(symbol.st_shndx);
     
-    NamedELFSymbol named_sym(symbol, ConstString(symbol_name),
-                          symbol_section_sp.get() ? symbol_section_sp->GetName()
-                                                  : ConstString());
-    unique_elf_symbols.push_back(named_sym);
+    unique_elf_symbols.emplace_back(
+        NamedELFSymbol(symbol, ConstString(symbol_name),
+                       symbol_section_sp.get() ? symbol_section_sp->GetName()
+                                               : ConstString()));
   }
 
   // Make elements in vector unique and then add then iterate over them to add

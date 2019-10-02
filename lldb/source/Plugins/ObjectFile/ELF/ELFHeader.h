@@ -286,10 +286,16 @@ struct NamedELFSymbol : ELFSymbol {
                  lldb_private::ConstString section_name);
 
   /// \returns \c true when all fields (except name and section indexes) of the
-  /// right hand side object are the same as the once of this object; otherwise
+  /// right hand side object are the same as the ones of this object; otherwise
   /// \c false is returned. We ignore the name and section index in order to
   /// only compare actual name strings and not where strings are located.
   bool operator==(const NamedELFSymbol &rhs) const noexcept;
+
+  /// \returns \c true when all fields (except name and section indexes) of the
+  /// right hand side object are smaller than the ones of this object; otherwise
+  /// \c false is returned. We ignore the name and section index in order to
+  /// only compare actual name strings and not where strings are located.
+  bool operator<(const NamedELFSymbol &rhs) const noexcept;
 };
 
 /// \class ELFDynamic
