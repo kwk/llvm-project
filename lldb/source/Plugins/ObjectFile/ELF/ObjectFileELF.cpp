@@ -1946,13 +1946,15 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
 
   // Make elements in vector unique and then add then iterate over them to add
   // them to the symtab.
-  std::sort(unique_elf_symbols.begin(), unique_elf_symbols.end());
+  std::stable_sort(unique_elf_symbols.begin(), unique_elf_symbols.end());
   unique_elf_symbols.resize(static_cast<UniqueElfSymbolColl::size_type>(
       std::unique(unique_elf_symbols.begin(), unique_elf_symbols.end()) -
       unique_elf_symbols.begin()));
 
   std::lock_guard<std::recursive_mutex> guard(symtab->GetMutex());
+  unsigned j = -1;
   for (auto symbol : unique_elf_symbols) {
+    ++j;
     const char *symbol_name = symbol.st_name_string.AsCString();
 
     SectionSP symbol_section_sp;
@@ -2205,7 +2207,7 @@ unsigned ObjectFileELF::ParseSymbols(Symtab *symtab, user_id_t start_id,
         symbol.st_size != 0 || symbol.getType() != STT_FUNC;
 
     Symbol dc_symbol(
-        i + start_id, // ID is the original symbol table index.
+        j + start_id, // ID is the original symbol table index.
         mangled,
         symbol_type,                    // Type of this symbol
         is_global,                      // Is this globally visible?
