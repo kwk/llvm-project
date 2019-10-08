@@ -107,6 +107,9 @@ def use_support_substitutions(config):
     # The clang module cache is used for building inferiors.
     flags += ['-fmodules-cache-path={}'.format(config.clang_module_cache)]
 
+    # TODO(kwk): Make LTO flag tied to some condition. By environment variable maybe?
+    flags += ['-flto']
+
     additional_tool_dirs=[]
     if config.lldb_lit_tools_dir:
         additional_tool_dirs.append(config.lldb_lit_tools_dir)
