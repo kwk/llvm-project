@@ -3,7 +3,7 @@
 # we don't have .symtab listed in the "Sections" entry.
 
 # RUN: yaml2obj %s > %t.obj
-# RUN: %lldb -b -o "image dump sections" %t.obj | FileCheck -v --color --dump-input=always %s
+# RUN: %lldb -b -o "image dump sections" %t.obj | FileCheck %s
 
 # CHECK: SectID     Type             File Address                             Perm File Off.  File Size  Flags      Section Name
 # CHECK-NEXT: ---------- ---------------- ---------------------------------------  ---- ---------- ---------- ---------- ----------------------------
