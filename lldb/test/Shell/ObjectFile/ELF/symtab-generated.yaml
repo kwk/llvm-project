@@ -1,0 +1,37 @@
+# In this test we define a "Symbols" entry in the YAML and expect a .symtab
+# section to be generated. Notice that this is automatically added even though
+# we don't have .symtab listed in the "Sections" entry.
+
+# RUN: yaml2obj %s > %t.obj
+# RUN: %lldb -b -o "image dump sections" %t.obj | FileCheck -v --color --dump-input=always %s
+
+# CHECK: SectID     Type             File Address                             Perm File Off.  File Size  Flags      Section Name
+# CHECK-NEXT: ---------- ---------------- ---------------------------------------  ---- ---------- ---------- ---------- ----------------------------
+# CHECK-NEXT: {{.*}}.text
+# CHECK-NEXT: {{.*}}.strtab
+# CHECK-NEXT: {{.*}}.shstrtab
+# CHECK-NEXT: {{.*}}.symtab
+# CHECK-EMPTY:
+
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS64
+  Data:            ELFDATA2LSB
+  Type:            ET_EXEC
+  Machine:         EM_X86_64
+  Entry:           0x00000000004004C0
+Sections:
+- Name:            .text
+  Type:            SHT_PROGBITS
+  Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+  Address:         0x00000000004003D0
+  AddressAlign:    0x0000000000000010
+  Content:         DEADBEEFBAADF00D
+Symbols:
+- Name:            main
+  Type:            STT_FUNC
+  Section:         .text
+  Value:           0x00000000004003D0
+  Size:            0x0000000000000008
+...

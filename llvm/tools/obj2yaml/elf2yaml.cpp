@@ -200,8 +200,8 @@ template <class ELFT> Expected<ELFYAML::Object *> ELFDumper<ELFT>::dump() {
       return TableOrErr.takeError();
     ShndxTable = *TableOrErr;
   }
-  if (SymTab)
-    if (Error E = dumpSymbols(SymTab, Y->Symbols))
+  if (SymTab && Y->Symbols)
+    if (Error E = dumpSymbols(SymTab, *Y->Symbols))
       return std::move(E);
   if (DynSymTab)
     if (Error E = dumpSymbols(DynSymTab, Y->DynamicSymbols))
