@@ -2,17 +2,25 @@
 # section to be generated. Notice that this is automatically added even though
 # we don't have .symtab listed in the "Sections" entry.
 
-# RUN: yaml2obj %s > %t.obj
-# RUN: %lldb -b -o "image dump sections" %t.obj | FileCheck %s
+# RUN: yaml2obj %s -o %t
+# RUN: llvm-readobj --sections %t | FileCheck %s
 
-# CHECK: SectID     Type             File Address                             Perm File Off.  File Size  Flags      Section Name
-# CHECK-NEXT: ---------- ---------------- ---------------------------------------  ---- ---------- ---------- ---------- ----------------------------
-# CHECK-NEXT: {{.*}}.text
-# CHECK-NEXT: {{.*}}.strtab
-# CHECK-NEXT: {{.*}}.shstrtab
-# CHECK-NEXT: {{.*}}.symtab
+# CHECK:      Sections [
+# CHECK:        Section {
+# CHECK:          Name: .symtab (25)
+# CHECK-NEXT:     Type: SHT_SYMTAB (0x2)
+# CHECK-NEXT:     Flags [ (0x0)
+# CHECK-NEXT:     ]
+# CHECK-NEXT:     Address: 0x0
+# CHECK-NEXT:     Offset: 0x70
+# CHECK-NEXT:     Size: 48
+# CHECK-NEXT:     Link: 2
+# CHECK-NEXT:     Info: 2
+# CHECK-NEXT:     AddressAlignment: 8
+# CHECK-NEXT:     EntrySize: 24
+# CHECK-NEXT:  }
+# CHECK-NEXT:]
 # CHECK-EMPTY:
-
 
 --- !ELF
 FileHeader:
