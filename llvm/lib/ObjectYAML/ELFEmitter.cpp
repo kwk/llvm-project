@@ -558,9 +558,8 @@ void ELFState<ELFT>::initSymtabSectionHeader(Elf_Shdr &SHeader,
 
   // If the symbol table section is explicitly described in the YAML
   // then we should set the fields requested.
-  SHeader.sh_info = (RawSec && RawSec->Info)
-                        ? (unsigned)(*RawSec->Info)
-                        : findFirstNonGlobal(Symbols) + 1;
+  SHeader.sh_info = (RawSec && RawSec->Info) ? (unsigned)(*RawSec->Info)
+                                             : findFirstNonGlobal(Symbols) + 1;
   SHeader.sh_entsize = (YAMLSec && YAMLSec->EntSize)
                            ? (uint64_t)(*YAMLSec->EntSize)
                            : sizeof(Elf_Sym);
