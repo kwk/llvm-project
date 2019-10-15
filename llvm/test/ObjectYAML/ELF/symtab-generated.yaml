@@ -30,8 +30,4 @@ FileHeader:
   Machine:         EM_X86_64
 Symbols:
 - Name:            main
-  Type:            STT_FUNC
-  Section:         .text
-  Value:           0x00000000004003D0
-  Size:            0x0000000000000008
 ...
