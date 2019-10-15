@@ -4,12 +4,12 @@
 # RUN: yaml2obj %s -o %t
 # RUN: llvm-readobj --sections %t | FileCheck %s
 
+# CHECK-NOT: Name: .symtab
+# CHECK-NOT: Type: SHT_SYMTAB
+
 --- !ELF
 FileHeader:
   Class:           ELFCLASS32
   Data:            ELFDATA2LSB
   Type:            ET_REL
   Machine:         EM_386
-
-# CHECK-NOT: Name: .symtab
-# CHECK-NOT: Type: SHT_SYMTAB
