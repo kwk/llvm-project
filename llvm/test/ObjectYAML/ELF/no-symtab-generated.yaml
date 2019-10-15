@@ -1,5 +1,5 @@
-# In this test we don't explicitly define a "Symbols" entry in the YAML and
-# expect no .symtab section to be generated.
+## In this test we don't explicitly define a "Symbols" entry in the YAML and
+## expect no .symtab section to be generated.
 
 # RUN: yaml2obj %s -o %t
 # RUN: llvm-readobj --sections %t | FileCheck %s
