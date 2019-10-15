@@ -10,10 +10,6 @@ FileHeader:
   Data:            ELFDATA2LSB
   Type:            ET_REL
   Machine:         EM_386
-Sections:
-  - Name:            .debug_line
-    Type:            SHT_PROGBITS
-    Flags:           [ SHF_COMPRESSED ]
 
 # CHECK-NOT: Name: .symtab
 # CHECK-NOT: Type: SHT_SYMTAB
