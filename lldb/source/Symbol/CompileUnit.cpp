@@ -276,13 +276,12 @@ void CompileUnit::ResolveSymbolContext(const FileSpec &file_spec,
   SymbolContext sc(GetModule());
   sc.comp_unit = this;
 
-  if (line == 0)
-    return;
-  
-  if (file_spec_matches_cu_file_spec && !check_inlines) {
-    // only append the context if we aren't looking for inline call sites by
-    // file and line and if the file spec matches that of the compile unit
-    sc_list.Append(sc);
+  if (line == 0) {
+    if (file_spec_matches_cu_file_spec && !check_inlines) {
+      // only append the context if we aren't looking for inline call sites by
+      // file and line and if the file spec matches that of the compile unit
+      sc_list.Append(sc);
+    }
     return;
   }
 
