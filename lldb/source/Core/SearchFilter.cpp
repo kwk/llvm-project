@@ -622,10 +622,11 @@ SearchFilterSP SearchFilterByModuleList::CreateFromStructuredData(
   StructuredData::Array *modules_array;
   bool success = data_dict.GetValueForKeyAsArray(GetKey(OptionNames::ModList),
                                                  modules_array);
-  FileSpecList modules;
+
   if (!success)
     return std::make_shared<SearchFilterByModuleList>(target.shared_from_this(),
-                                                      modules);
+                                                      FileSpecList{});
+  FileSpecList modules;
   size_t num_modules = modules_array->GetSize();
   for (size_t i = 0; i < num_modules; i++) {
     llvm::StringRef module;
@@ -774,9 +775,9 @@ void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
   bool no_modules_in_filter = m_module_spec_list.GetSize() == 0;
   for (size_t i = 0; i < num_modules; i++) {
     lldb::ModuleSP module_sp = target_images.GetModuleAtIndexUnlocked(i);
-    if (!(no_modules_in_filter ||
-        m_module_spec_list.FindFileIndex(0, module_sp->GetFileSpec(), false) !=
-            UINT32_MAX))
+    if (!no_modules_in_filter &&
+        m_module_spec_list.FindFileIndex(0, module_sp->GetFileSpec(), false) ==
+            UINT32_MAX)
       continue;
 
     SymbolContext matchingContext(m_target_sp, module_sp);
