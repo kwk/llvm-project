@@ -113,7 +113,7 @@ macro(add_clang_library name)
     if(TARGET ${lib})
       target_link_libraries(${lib} INTERFACE ${LLVM_COMMON_LIBS})
 
-      if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY OR ARG_INSTALL_WITH_TOOLCHAIN)
+      if (ARG_SHARED AND (NOT LLVM_INSTALL_TOOLCHAIN_ONLY OR ARG_INSTALL_WITH_TOOLCHAIN))
         get_target_export_arg(${name} Clang export_to_clangtargets UMBRELLA clang-libraries)
         install(TARGETS ${lib}
           COMPONENT ${lib}
