@@ -248,6 +248,8 @@ void BreakpointResolverName::AddNameLookup(ConstString name,
 // accelerate function lookup.  At that point, we should switch the depth to
 // CompileUnit, and look in these tables.
 
+#include "lldb/Symbol/CompileUnit.h"
+
 Searcher::CallbackReturn
 BreakpointResolverName::SearchCallback(SearchFilter &filter,
                                        SymbolContext &context, Address *addr) {
@@ -268,6 +270,8 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
   }
   bool filter_by_cu =
       (filter.GetFilterRequiredItems() & eSymbolContextCompUnit) != 0;
+  bool filter_by_function =
+      (filter.GetFilterRequiredItems() & eSymbolContextFunction) != 0;
   bool filter_by_language = (m_language != eLanguageTypeUnknown);
   const bool include_symbols = !filter_by_cu;
   const bool include_inlines = true;
@@ -312,8 +316,31 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
       SymbolContext sc;
       func_list.GetContextAtIndex(idx, sc);
       if (filter_by_cu) {
-        if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
-          remove_it = true;
+        if (!filter_by_function) {
+          if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
+            remove_it = true;
+        } else {
+          // TODO(kwk): Currently this appears somewhat like a hack because only
+          // the SearchFilterByModuleListAndCUOrSupportFile search filter
+          // requires eSymbolContextCompUnit and eSymbolContextFunction
+          // (filter_by_cu && filter_by_function).
+
+          // Keep this symbol context if it is a function call to a function
+          // whose declaration is located in a file that passes. This is needed
+          // for inlined functions (e.g. when LTO is enabled) and templates.
+          if (Type *type = sc.function->GetType()) {
+            Declaration &decl =
+                const_cast<Declaration &>(type->GetDeclaration());
+            FileSpec &source_file = decl.GetFile();
+            if (!filter.CompUnitPasses(source_file))
+              remove_it = true;
+            else
+              fprintf(stderr,
+                      "=== KWK == : CompUnit %s passes and symbol context is "
+                      "not removed\n",
+                      source_file.GetPath().c_str());
+          }
+        }
       }
 
       if (filter_by_language) {
@@ -335,62 +362,65 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
 
   // Remove any duplicates between the function list and the symbol list
   SymbolContext sc;
-  if (func_list.GetSize()) {
-    for (i = 0; i < func_list.GetSize(); i++) {
-      if (func_list.GetContextAtIndex(i, sc)) {
-        bool is_reexported = false;
+  if (!func_list.GetSize())
+    return Searcher::eCallbackReturnContinue;
 
-        if (sc.block && sc.block->GetInlinedFunctionInfo()) {
-          if (!sc.block->GetStartAddress(break_addr))
-            break_addr.Clear();
-        } else if (sc.function) {
-          break_addr = sc.function->GetAddressRange().GetBaseAddress();
-          if (m_skip_prologue && break_addr.IsValid()) {
-            const uint32_t prologue_byte_size =
-                sc.function->GetPrologueByteSize();
-            if (prologue_byte_size)
-              break_addr.SetOffset(break_addr.GetOffset() + prologue_byte_size);
-          }
-        } else if (sc.symbol) {
-          if (sc.symbol->GetType() == eSymbolTypeReExported) {
-            const Symbol *actual_symbol =
-                sc.symbol->ResolveReExportedSymbol(m_breakpoint->GetTarget());
-            if (actual_symbol) {
-              is_reexported = true;
-              break_addr = actual_symbol->GetAddress();
-            }
-          } else {
-            break_addr = sc.symbol->GetAddress();
-          }
+  for (i = 0; i < func_list.GetSize(); i++) {
+    if (!func_list.GetContextAtIndex(i, sc))
+      continue;
+    
+    bool is_reexported = false;
 
-          if (m_skip_prologue && break_addr.IsValid()) {
-            const uint32_t prologue_byte_size =
-                sc.symbol->GetPrologueByteSize();
-            if (prologue_byte_size)
-              break_addr.SetOffset(break_addr.GetOffset() + prologue_byte_size);
-            else {
-              const Architecture *arch =
-                  m_breakpoint->GetTarget().GetArchitecturePlugin();
-              if (arch)
-                arch->AdjustBreakpointAddress(*sc.symbol, break_addr);
-            }
-          }
+    if (sc.block && sc.block->GetInlinedFunctionInfo()) {
+      if (!sc.block->GetStartAddress(break_addr))
+        break_addr.Clear();
+    } else if (sc.function) {
+      break_addr = sc.function->GetAddressRange().GetBaseAddress();
+      if (m_skip_prologue && break_addr.IsValid()) {
+        const uint32_t prologue_byte_size =
+            sc.function->GetPrologueByteSize();
+        if (prologue_byte_size)
+          break_addr.SetOffset(break_addr.GetOffset() + prologue_byte_size);
+      }
+    } else if (sc.symbol) {
+      if (sc.symbol->GetType() == eSymbolTypeReExported) {
+        const Symbol *actual_symbol =
+            sc.symbol->ResolveReExportedSymbol(m_breakpoint->GetTarget());
+        if (actual_symbol) {
+          is_reexported = true;
+          break_addr = actual_symbol->GetAddress();
         }
+      } else {
+        break_addr = sc.symbol->GetAddress();
+      }
 
-        if (break_addr.IsValid()) {
-          if (filter.AddressPasses(break_addr)) {
-            BreakpointLocationSP bp_loc_sp(
-                AddLocation(break_addr, &new_location));
-            bp_loc_sp->SetIsReExported(is_reexported);
-            if (bp_loc_sp && new_location && !m_breakpoint->IsInternal()) {
-              if (log) {
-                StreamString s;
-                bp_loc_sp->GetDescription(&s, lldb::eDescriptionLevelVerbose);
-                LLDB_LOGF(log, "Added location: %s\n", s.GetData());
-              }
-            }
-          }
+      if (m_skip_prologue && break_addr.IsValid()) {
+        const uint32_t prologue_byte_size = sc.symbol->GetPrologueByteSize();
+        if (prologue_byte_size)
+          break_addr.SetOffset(break_addr.GetOffset() + prologue_byte_size);
+        else {
+          const Architecture *arch =
+              m_breakpoint->GetTarget().GetArchitecturePlugin();
+          if (arch)
+            arch->AdjustBreakpointAddress(*sc.symbol, break_addr);
         }
+      }
+    }
+
+    if (!break_addr.IsValid())
+      continue;
+  
+    if (!filter.AddressPasses(break_addr))
+      continue;
+    
+    BreakpointLocationSP bp_loc_sp(
+        AddLocation(break_addr, &new_location));
+    bp_loc_sp->SetIsReExported(is_reexported);
+    if (bp_loc_sp && new_location && !m_breakpoint->IsInternal()) {
+      if (log) {
+        StreamString s;
+        bp_loc_sp->GetDescription(&s, lldb::eDescriptionLevelVerbose);
+        LLDB_LOGF(log, "Added location: %s\n", s.GetData());
       }
     }
   }

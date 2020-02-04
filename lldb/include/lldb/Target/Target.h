@@ -667,8 +667,8 @@ public:
                    const std::vector<std::string> &func_names,
                    lldb::FunctionNameType func_name_type_mask,
                    lldb::LanguageType language, lldb::addr_t m_offset,
-                   LazyBool skip_prologue, bool internal,
-                   bool request_hardware);
+                   LazyBool skip_prologue, bool internal, bool request_hardware,
+                   bool search_source_files);
 
   // Use this to create a general breakpoint:
   lldb::BreakpointSP CreateBreakpoint(lldb::SearchFilterSP &filter_sp,
@@ -1244,6 +1244,10 @@ public:
   lldb::SearchFilterSP
   GetSearchFilterForModuleAndCUList(const FileSpecList *containingModules,
                                     const FileSpecList *containingSourceFiles);
+
+  lldb::SearchFilterSP GetSearchFilterForModuleListAndCUOrSupportFile(
+      const FileSpecList *containingModules,
+      const FileSpecList *containingSourceFiles);
 
   lldb::REPLSP GetREPL(Status &err, lldb::LanguageType language,
                        const char *repl_options, bool can_create);

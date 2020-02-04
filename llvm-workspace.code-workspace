@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "/home/kkleine/Documents/ideas"
+		},
+		{
+			"path": "/home/kkleine/dev/binutils-gdb"
+		},
+		{
+			"path": "/home/kkleine/dev/elfutils"
+		},
+		{
+			"path": "/home/kkleine/Documents/talks"
+		}
+	],
+	"settings": {
+	}
+}

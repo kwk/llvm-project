@@ -324,7 +324,7 @@ BreakpointSP Target::CreateBreakpoint(const FileSpecList *containingModules,
                                       LazyBool check_inlines,
                                       LazyBool skip_prologue, bool internal,
                                       bool hardware,
-                                      LazyBool move_to_nearest_code) {
+                                      LazyBool move_to_nearest_code) {  
   FileSpec remapped_file;
   if (!GetSourcePathMap().ReverseRemapPath(file, remapped_file))
     remapped_file = file;
@@ -439,12 +439,18 @@ Target::CreateBreakpoint(const FileSpecList *containingModules,
                          const std::vector<std::string> &func_names,
                          FunctionNameType func_name_type_mask,
                          LanguageType language, lldb::addr_t offset,
-                         LazyBool skip_prologue, bool internal, bool hardware) {
+                         LazyBool skip_prologue, bool internal, bool hardware,
+                         bool search_source_files) {
   BreakpointSP bp_sp;
   size_t num_names = func_names.size();
   if (num_names > 0) {
-    SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
-        containingModules, containingSourceFiles));
+    SearchFilterSP filter_sp;
+    if (search_source_files)
+      filter_sp = GetSearchFilterForModuleListAndCUOrSupportFile(
+          containingModules, containingSourceFiles);
+    else
+      filter_sp = GetSearchFilterForModuleAndCUList(containingModules,
+                                                    containingSourceFiles);
 
     if (skip_prologue == eLazyBoolCalculate)
       skip_prologue = GetSkipPrologue() ? eLazyBoolYes : eLazyBoolNo;
@@ -540,6 +546,23 @@ SearchFilterSP Target::GetSearchFilterForModuleAndCUList(
         shared_from_this(), FileSpecList(), *containingSourceFiles);
   } else {
     filter_sp = std::make_shared<SearchFilterByModuleListAndCU>(
+        shared_from_this(), *containingModules, *containingSourceFiles);
+  }
+  return filter_sp;
+}
+
+SearchFilterSP Target::GetSearchFilterForModuleListAndCUOrSupportFile(
+    const FileSpecList *containingModules,
+    const FileSpecList *containingSourceFiles) {
+  if (containingSourceFiles == nullptr || containingSourceFiles->GetSize() == 0)
+    return GetSearchFilterForModuleList(containingModules);
+
+  SearchFilterSP filter_sp;
+  if (containingModules == nullptr) {
+    filter_sp = std::make_shared<SearchFilterByModuleListAndCUOrSupportFile>(
+        shared_from_this(), FileSpecList(), *containingSourceFiles);
+  } else {
+    filter_sp = std::make_shared<SearchFilterByModuleListAndCUOrSupportFile>(
         shared_from_this(), *containingModules, *containingSourceFiles);
   }
   return filter_sp;

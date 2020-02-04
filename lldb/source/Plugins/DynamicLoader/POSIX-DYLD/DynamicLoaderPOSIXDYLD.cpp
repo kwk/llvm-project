@@ -350,7 +350,9 @@ bool DynamicLoaderPOSIXDYLD::SetRendezvousBreakpoint() {
         0,           /* offset */
         eLazyBoolNo, /* skip_prologue */
         true,        /* internal */
-        false /* request_hardware */);
+        false,       /* request_hardware */
+        false        /* search source files */
+    );
   }
 
   if (dyld_break->GetNumResolvedLocations() != 1) {

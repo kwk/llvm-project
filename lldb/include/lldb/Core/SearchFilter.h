@@ -210,7 +210,8 @@ public:
     ByModule,
     ByModules,
     ByModulesAndCU,
-    LastKnownFilterType = ByModulesAndCU,
+    ByModuleListAndCUOrSupportFile,
+    LastKnownFilterType = ByModuleListAndCUOrSupportFile,
     UnknownFilter
   };
 
@@ -231,7 +232,13 @@ public:
 
 protected:
   // Serialization of SearchFilter options:
-  enum OptionNames { ModList = 0, CUList, LanguageName, LastOptionName };
+  enum OptionNames {
+    ModList = 0,
+    CUList,
+    LanguageName,
+    CUOrSupportFileList,
+    LastOptionName
+  };
   static const char *g_option_names[LastOptionName];
 
   static const char *GetKey(enum OptionNames enum_value) {
@@ -436,6 +443,57 @@ protected:
 
 private:
   FileSpecList m_cu_spec_list;
+};
+
+
+class SearchFilterByModuleListAndCUOrSupportFile : public SearchFilterByModuleList {
+public:
+  /// The basic constructor takes a Target, which gives the space to search,
+  /// and the module list to restrict the search to.
+  ///
+  /// \param[in] target
+  ///    The Target that provides the module list to search.
+  ///
+  /// \param[in] module
+  ///    The Module that limits the search.
+  SearchFilterByModuleListAndCUOrSupportFile(const lldb::TargetSP &targetSP,
+                                const FileSpecList &module_list,
+                                const FileSpecList &cu_or_file_list);
+
+  SearchFilterByModuleListAndCUOrSupportFile(
+      const SearchFilterByModuleListAndCUOrSupportFile &rhs);
+
+  ~SearchFilterByModuleListAndCUOrSupportFile() override;
+
+  SearchFilterByModuleListAndCUOrSupportFile &
+  operator=(const SearchFilterByModuleListAndCUOrSupportFile &rhs);
+
+  bool AddressPasses(Address &address) override;
+
+  bool CompUnitPasses(FileSpec &fileSpec) override;
+
+  bool CompUnitPasses(CompileUnit &compUnit) override;
+
+  void GetDescription(Stream *s) override;
+
+  uint32_t GetFilterRequiredItems() override;
+
+  void Dump(Stream *s) const override;
+
+  void Search(Searcher &searcher) override;
+
+  static lldb::SearchFilterSP
+  CreateFromStructuredData(Target &target,
+                           const StructuredData::Dictionary &data_dict,
+                           Status &error);
+
+  StructuredData::ObjectSP SerializeToStructuredData() override;
+
+protected:
+  lldb::SearchFilterSP DoCopyForBreakpoint(Breakpoint &breakpoint) override;
+
+private:
+  FileSpecList m_cu_or_support_file_spec_list;
 };
 
 } // namespace lldb_private

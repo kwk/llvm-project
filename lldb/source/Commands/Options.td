@@ -194,6 +194,8 @@ let Command = "breakpoint set" in {
     Groups<[1, 9]>, Arg<"Boolean">,
     Desc<"Move breakpoints to nearest code. If not set the "
     "target.move-to-nearest-codesetting is used.">;
+  def breakpoint_set_search_source_files : Option<"search-source-files", "Q">,
+      Desc<"Always search all search files and not only compilation unit files when using -f or derivates.">;
   /* Don't add this option till it actually does something useful...
   def breakpoint_set_exception_typename : Option<"exception-typename", "O">,
     Arg<"TypeName">, Desc<"The breakpoint will only stop if an "

@@ -444,6 +444,10 @@ public:
         m_source_regex_func_names.insert(option_arg);
         break;
 
+      case 'Q': {
+        m_search_source_files = true;
+      } break;
+
       default:
         llvm_unreachable("Unimplemented option");
       }
@@ -474,6 +478,7 @@ public:
       m_move_to_nearest_code = eLazyBoolCalculate;
       m_source_regex_func_names.clear();
       m_current_key.clear();
+      m_search_source_files = false;
     }
 
     llvm::ArrayRef<OptionDefinition> GetDefinitions() override {
@@ -505,6 +510,9 @@ public:
     LazyBool m_move_to_nearest_code;
     std::unordered_set<std::string> m_source_regex_func_names;
     std::string m_current_key;
+    bool m_search_source_files; // When using -f or derivates make sure to
+                                // always search all source files and not only
+                                // compilation unit file names.
   };
 
 protected:
@@ -611,7 +619,7 @@ protected:
           &(m_options.m_modules), &(m_options.m_filenames),
           m_options.m_func_names, name_type_mask, m_options.m_language,
           m_options.m_offset_addr, m_options.m_skip_prologue, internal,
-          m_options.m_hardware);
+          m_options.m_hardware, m_options.m_search_source_files);
     } break;
 
     case eSetTypeFunctionRegexp: // Breakpoint by regular expression function
