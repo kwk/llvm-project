@@ -1,0 +1,81 @@
+# In these tests we will set breakpoints on a function by name. That function
+# is defined in a header file (search-source-files.h) and will therefore be
+# inlined into the file that includes it (search-source-files.cpp).
+#
+# The change that goes along with this test file introduces a flag
+# (--search-source-files or -Q) that you can pass to "(lldb) breakpoint set".
+# We run several tests, each one time without and one time with this new
+# parameter. That way we verify that LLDB's default behavior hasn't changed.
+#
+# TODO(kwk): Check that we can also do the same with C++ methods in files?
+#            (See https://lldb.llvm.org/use/tutorial.html and look for --method.)
+
+# RUN: mkdir -p %t
+# RUN: cd %t
+# RUN: %build %p/Inputs/search-source-files.cpp -o dummy.out
+# RUN: %lldb -b -s %s dummy.out | FileCheck --color --dump-input=fail %s 
+
+#---------------------------------
+# Set breakpoint by function name.
+#---------------------------------
+
+breakpoint set -n inlined_42
+# CHECK: (lldb) breakpoint set -n inlined_42
+# CHECK-NEXT: Breakpoint 1: where = dummy.out`inlined_42() + 4 at search-source-files.h:1:20, address = 0x0{{.*}}
+
+breakpoint set -n inlined_42 --search-source-files
+# CHECK: (lldb) breakpoint set -n inlined_42 --search-source-files
+# CHECK-NEXT: Breakpoint 2: where = dummy.out`inlined_42() + 4 at search-source-files.h:1:20, address = 0x0{{.*}}
+
+#----------------------------------------------------------------------
+# Set breakpoint by function name and filename
+# (the one in which the function is inlined, aka the compilation unit).
+#----------------------------------------------------------------------
+
+breakpoint set -n inlined_42 -f search-source-files.cpp
+# CHECK: (lldb) breakpoint set -n inlined_42 -f search-source-files.cpp
+# CHECK-NEXT: Breakpoint 3: where = dummy.out`inlined_42() + 4 at search-source-files.h:1:20, address = 0x0{{.*}}
+
+breakpoint set -n inlined_42 -f search-source-files.cpp --search-source-files
+# CHECK: (lldb) breakpoint set -n inlined_42 -f search-source-files.cpp --search-source-files
+# CHECK-NEXT: Breakpoint 4: no locations (pending).
+
+#----------------------------------------------------
+# Set breakpoint by function name and source filename
+# (the file in which the function is defined).
+#
+# NOTE: This test is the really interesting one as it
+#       shows that we can now search by source files
+#       that are themselves no compulation units when
+#       the --search-source-files parameter is given.
+#----------------------------------------------------
+
+breakpoint set -n inlined_42 -f search-source-files.h
+# CHECK: (lldb) breakpoint set -n inlined_42 -f search-source-files.h
+# CHECK-NEXT: Breakpoint 5: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+breakpoint set -n inlined_42 -f search-source-files.h --search-source-files
+# CHECK: (lldb) breakpoint set -n inlined_42 -f search-source-files.h --search-source-files
+# CHECK-NEXT: Breakpoint 6: where = dummy.out`inlined_42() + 4 at search-source-files.h:1:20, address = 0x0{{.*}}
+
+#-----------------------------------------------------
+# Set breakpoint by function name and source filename.
+# This time the file doesn't exist.
+#
+# NOTE: This test exists in order to prove that
+#       --search-source-files doesn't widen the search
+#       space too much. When we search for a function
+#       in file that doesn't exist, we should get no
+#       results.
+#-----------------------------------------------------
+
+breakpoint set -n inlined_42 -f file-not-existing.h
+# CHECK: (lldb) breakpoint set -n inlined_42 -f file-not-existing.h
+# CHECK-NEXT: Breakpoint 7: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+breakpoint set -n inlined_42 -f file-not-existing.h --search-source-files
+# CHECK: (lldb) breakpoint set -n inlined_42 -f file-not-existing.h --search-source-files
+# CHECK-NEXT: Breakpoint 8: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.

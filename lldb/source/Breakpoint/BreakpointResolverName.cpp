@@ -334,11 +334,6 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
             FileSpec &source_file = decl.GetFile();
             if (!filter.CompUnitPasses(source_file))
               remove_it = true;
-            else
-              fprintf(stderr,
-                      "=== KWK == : CompUnit %s passes and symbol context is "
-                      "not removed\n",
-                      source_file.GetPath().c_str());
           }
         }
       }

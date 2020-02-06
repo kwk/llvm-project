@@ -411,9 +411,10 @@ class SearchFilterByModuleListAndCU : public SearchFilterByModuleList {
 public:
   /// The basic constructor takes a Target, which gives the space to search,
   /// and the module list to restrict the search to.
-  SearchFilterByModuleListAndCU(const lldb::TargetSP &targetSP,
-                                const FileSpecList &module_list,
-                                const FileSpecList &cu_list);
+  SearchFilterByModuleListAndCU(
+      const lldb::TargetSP &targetSP, const FileSpecList &module_list,
+      const FileSpecList &cu_list,
+      enum FilterTy filter_ty = FilterTy::ByModulesAndCU);
 
   ~SearchFilterByModuleListAndCU() override;
 
@@ -441,12 +442,13 @@ public:
 protected:
   lldb::SearchFilterSP DoCopyForBreakpoint(Breakpoint &breakpoint) override;
 
-private:
+protected:
   FileSpecList m_cu_spec_list;
 };
 
-
-class SearchFilterByModuleListAndCUOrSupportFile : public SearchFilterByModuleList {
+#if 1
+class SearchFilterByModuleListAndCUOrSupportFile
+    : public SearchFilterByModuleListAndCU {
 public:
   /// The basic constructor takes a Target, which gives the space to search,
   /// and the module list to restrict the search to.
@@ -459,6 +461,54 @@ public:
   SearchFilterByModuleListAndCUOrSupportFile(const lldb::TargetSP &targetSP,
                                 const FileSpecList &module_list,
                                 const FileSpecList &cu_or_file_list);
+
+  SearchFilterByModuleListAndCUOrSupportFile(
+      const SearchFilterByModuleListAndCUOrSupportFile &rhs);
+
+  ~SearchFilterByModuleListAndCUOrSupportFile() override;
+
+  // SearchFilterByModuleListAndCUOrSupportFile &
+  // operator=(const SearchFilterByModuleListAndCUOrSupportFile &rhs);
+
+  bool AddressPasses(Address &address) override;
+
+  // bool CompUnitPasses(FileSpec &fileSpec) override;
+
+  // bool CompUnitPasses(CompileUnit &compUnit) override;
+
+  // void GetDescription(Stream *s) override;
+
+  uint32_t GetFilterRequiredItems() override;
+
+  // void Dump(Stream *s) const override;
+
+  // void Search(Searcher &searcher) override;
+
+  // static lldb::SearchFilterSP
+  // CreateFromStructuredData(Target &target,
+  //                          const StructuredData::Dictionary &data_dict,
+  //                          Status &error);
+
+  StructuredData::ObjectSP SerializeToStructuredData() override;
+
+protected:
+  lldb::SearchFilterSP DoCopyForBreakpoint(Breakpoint &breakpoint) override;
+};
+#else
+class SearchFilterByModuleListAndCUOrSupportFile
+    : public SearchFilterByModuleList {
+public:
+  /// The basic constructor takes a Target, which gives the space to search,
+  /// and the module list to restrict the search to.
+  ///
+  /// \param[in] target
+  ///    The Target that provides the module list to search.
+  ///
+  /// \param[in] module
+  ///    The Module that limits the search.
+  SearchFilterByModuleListAndCUOrSupportFile(
+      const lldb::TargetSP &targetSP, const FileSpecList &module_list,
+      const FileSpecList &cu_or_file_list);
 
   SearchFilterByModuleListAndCUOrSupportFile(
       const SearchFilterByModuleListAndCUOrSupportFile &rhs);
@@ -495,6 +545,7 @@ protected:
 private:
   FileSpecList m_cu_or_support_file_spec_list;
 };
+#endif
 
 } // namespace lldb_private
 

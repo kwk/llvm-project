@@ -665,9 +665,9 @@ StructuredData::ObjectSP SearchFilterByModuleList::SerializeToStructuredData() {
 
 SearchFilterByModuleListAndCU::SearchFilterByModuleListAndCU(
     const lldb::TargetSP &target_sp, const FileSpecList &module_list,
-    const FileSpecList &cu_list)
+    const FileSpecList &cu_list, enum FilterTy filter_ty)
     : SearchFilterByModuleList(target_sp, module_list,
-                               FilterTy::ByModulesAndCU),
+                               filter_ty),
       m_cu_spec_list(cu_list) {}
 
 SearchFilterByModuleListAndCU::~SearchFilterByModuleListAndCU() = default;
@@ -716,7 +716,7 @@ lldb::SearchFilterSP SearchFilterByModuleListAndCU::CreateFromStructuredData(
   }
 
   return std::make_shared<SearchFilterByModuleListAndCU>(
-      target.shared_from_this(), modules, cus);
+      target.shared_from_this(), modules, cus, FilterTy::ByModulesAndCU);
 }
 
 StructuredData::ObjectSP
@@ -845,6 +845,231 @@ SearchFilterByModuleListAndCU::DoCopyForBreakpoint(Breakpoint &breakpoint) {
 
 //  SearchFilterByModuleListAndCUOrSupportFile:
 
+#if 1
+SearchFilterByModuleListAndCUOrSupportFile::
+    SearchFilterByModuleListAndCUOrSupportFile(
+        const lldb::TargetSP &target_sp, const FileSpecList &module_list,
+        const FileSpecList &cu_or_support_file_list)
+    : SearchFilterByModuleListAndCU(target_sp, module_list,
+                                    cu_or_support_file_list,
+                                    FilterTy::ByModuleListAndCUOrSupportFile) {}
+
+SearchFilterByModuleListAndCUOrSupportFile::
+    SearchFilterByModuleListAndCUOrSupportFile(
+        const SearchFilterByModuleListAndCUOrSupportFile &rhs) = default;
+
+// SearchFilterByModuleListAndCUOrSupportFile &
+// SearchFilterByModuleListAndCUOrSupportFile::operator=(
+//     const SearchFilterByModuleListAndCUOrSupportFile &rhs) {
+//   if (&rhs != this) {
+//     m_target_sp = rhs.m_target_sp;
+//     m_module_spec_list = rhs.m_module_spec_list;
+//     m_cu_spec_list = rhs.m_cu_spec_list;
+//   }
+//   return *this;
+// }
+
+SearchFilterByModuleListAndCUOrSupportFile::
+    ~SearchFilterByModuleListAndCUOrSupportFile() = default;
+
+// lldb::SearchFilterSP
+// SearchFilterByModuleListAndCUOrSupportFile::CreateFromStructuredData(
+//     Target &target, const StructuredData::Dictionary &data_dict,
+//     Status &error) {
+//   StructuredData::Array *modules_array = nullptr;
+//   SearchFilterSP result_sp;
+//   bool success = data_dict.GetValueForKeyAsArray(GetKey(OptionNames::ModList),
+//                                                  modules_array);
+//   FileSpecList modules;
+//   if (success) {
+//     size_t num_modules = modules_array->GetSize();
+//     for (size_t i = 0; i < num_modules; i++) {
+//       llvm::StringRef module;
+//       success = modules_array->GetItemAtIndexAsString(i, module);
+//       if (!success) {
+//         error.SetErrorStringWithFormat(
+//             "SFBMACOSF::CFSD: filter module item %zu not a string.", i);
+//         return result_sp;
+//       }
+//       modules.EmplaceBack(module);
+//     }
+//   }
+
+//   StructuredData::Array *cusOrSupportFiles_array = nullptr;
+//   success = data_dict.GetValueForKeyAsArray(
+//       GetKey(OptionNames::CUOrSupportFileList), cusOrSupportFiles_array);
+//   if (!success) {
+//     error.SetErrorString(
+//         "SFBMACOSF::CFSD: Could not find the CU or SupportFile list key.");
+//     return result_sp;
+//   }
+
+//   size_t num_cus = cusOrSupportFiles_array->GetSize();
+//   FileSpecList cusOrSupportFiles;
+//   for (size_t i = 0; i < num_cus; i++) {
+//     llvm::StringRef cu;
+//     success = cusOrSupportFiles_array->GetItemAtIndexAsString(i, cu);
+//     if (!success) {
+//       error.SetErrorStringWithFormat(
+//           "SFBMACOSF::CFSD: filter CU or support file item %zu not a string.",
+//           i);
+//       return nullptr;
+//     }
+//     cusOrSupportFiles.EmplaceBack(cu);
+//   }
+
+//   return std::make_shared<SearchFilterByModuleListAndCU>(
+//       target.shared_from_this(), modules, cusOrSupportFiles);
+// }
+
+StructuredData::ObjectSP
+SearchFilterByModuleListAndCUOrSupportFile::SerializeToStructuredData() {
+  auto options_dict_sp = std::make_shared<StructuredData::Dictionary>();
+  SearchFilterByModuleList::SerializeUnwrapped(options_dict_sp);
+  SerializeFileSpecList(options_dict_sp, OptionNames::CUOrSupportFileList,
+                        m_cu_spec_list);
+  return WrapOptionsDict(options_dict_sp);
+}
+
+bool SearchFilterByModuleListAndCUOrSupportFile::AddressPasses(
+    Address &address) {
+  SymbolContext sym_ctx;
+  address.CalculateSymbolContext(&sym_ctx, eSymbolContextEverything);
+  if (!sym_ctx.comp_unit) {
+    if (m_cu_spec_list.GetSize() != 0)
+      return false; // Has no comp_unit so can't pass the file check.
+  }
+  FileSpec cu_spec;
+  if (sym_ctx.comp_unit)
+    cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
+  // If the primary source file associated with the symbol's compile unit is in
+  // the list of CU's or support files, that's enough.
+  // TODO(kwk): Is that enough?
+  if (m_cu_spec_list.FindFileIndex(0, cu_spec, false) !=
+      UINT32_MAX)
+    return true; // Passes the file check (SearchFilterByModuleListAndCU returns true here)
+  return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
+}
+
+// bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(
+//     FileSpec &fileSpec) {
+//   if (SearchFilterByModuleListAndCU::CompUnitPasses(fileSpec)) {
+//     return true;
+//   }
+
+//   return m_cu_spec_list.FindFileIndex(0, fileSpec, false) != UINT32_MAX;
+//   //  FileSpecList fileSpecList;
+//   //  fileSpecList.Append(fileSpec);
+//   //  for (auto &stored_filespec : m_cu_spec_list)
+//   //    if (m_cu_spec_list.FindFileIndex(0, stored_filespec,
+//   //    false) != UINT32_MAX) {
+//   //      fprintf(stderr, "\n\nReturning TRUE\n\n");
+//   //      return true;
+
+//   //    }
+// }
+
+// bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(
+//     CompileUnit &compUnit) {
+//   bool in_cu_list = m_cu_spec_list.FindFileIndex(0, compUnit.GetPrimaryFile(),
+//                                                  false) != UINT32_MAX;
+//   if (in_cu_list) {
+//     ModuleSP module_sp(compUnit.GetModule());
+//     if (module_sp) {
+//       bool module_passes = SearchFilterByModuleList::ModulePasses(module_sp);
+//       return module_passes;
+//     } else
+//       return true;
+//   } else
+//     return false;
+// }
+
+// void SearchFilterByModuleListAndCUOrSupportFile::Search(Searcher &searcher) {
+//   if (!m_target_sp)
+//     return;
+
+//   if (searcher.GetDepth() == lldb::eSearchDepthTarget) {
+//     SymbolContext empty_sc;
+//     empty_sc.target_sp = m_target_sp;
+//     searcher.SearchCallback(*this, empty_sc, nullptr);
+//   }
+
+//   // If the module file spec is a full path, then we can just find the one
+//   // filespec that passes.  Otherwise, we need to go through all modules and
+//   // find the ones that match the file name.
+
+//   ModuleList matching_modules;
+//   const ModuleList &target_images = m_target_sp->GetImages();
+//   std::lock_guard<std::recursive_mutex> guard(target_images.GetMutex());
+
+//   const size_t num_modules = target_images.GetSize();
+//   bool no_modules_in_filter = m_module_spec_list.GetSize() == 0;
+//   for (size_t i = 0; i < num_modules; i++) {
+//     lldb::ModuleSP module_sp = target_images.GetModuleAtIndexUnlocked(i);
+//     if (no_modules_in_filter ||
+//         m_module_spec_list.FindFileIndex(0, module_sp->GetFileSpec(), false) !=
+//             UINT32_MAX) {
+//       SymbolContext matchingContext(m_target_sp, module_sp);
+//       Searcher::CallbackReturn shouldContinue;
+
+//       if (searcher.GetDepth() == lldb::eSearchDepthModule) {
+//         shouldContinue = DoModuleIteration(matchingContext, searcher);
+//         if (shouldContinue == Searcher::eCallbackReturnStop)
+//           return;
+//         continue;
+//       }
+
+//       const size_t num_cu = module_sp->GetNumCompileUnits();
+//       for (size_t cu_idx = 0; cu_idx < num_cu; cu_idx++) {
+//         CompUnitSP cu_sp = module_sp->GetCompileUnitAtIndex(cu_idx);
+//         matchingContext.comp_unit = cu_sp.get();
+//         if (!matchingContext.comp_unit)
+//           continue;
+//         if (m_cu_spec_list.FindFileIndex(
+//                 0, matchingContext.comp_unit->GetPrimaryFile(), false) ==
+//             UINT32_MAX)
+//           continue;
+
+//         shouldContinue = DoCUIteration(module_sp, matchingContext, searcher);
+//         if (shouldContinue == Searcher::eCallbackReturnStop)
+//           return;
+//       }
+//     }
+//   }
+// }
+
+// void SearchFilterByModuleListAndCUOrSupportFile::GetDescription(Stream *s) {
+//   size_t num_modules = m_module_spec_list.GetSize();
+//   if (num_modules == 1) {
+//     s->Printf(", module = ");
+//     s->PutCString(
+//         m_module_spec_list.GetFileSpecAtIndex(0).GetFilename().AsCString(
+//             "<Unknown>"));
+//   } else if (num_modules > 0) {
+//     s->Printf(", modules(%" PRIu64 ") = ", static_cast<uint64_t>(num_modules));
+//     for (size_t i = 0; i < num_modules; i++) {
+//       s->PutCString(
+//           m_module_spec_list.GetFileSpecAtIndex(i).GetFilename().AsCString(
+//               "<Unknown>"));
+//       if (i != num_modules - 1)
+//         s->PutCString(", ");
+//     }
+//   }
+// }
+
+uint32_t SearchFilterByModuleListAndCUOrSupportFile::GetFilterRequiredItems() {
+  return eSymbolContextModule | eSymbolContextCompUnit | eSymbolContextFunction;
+}
+
+// void SearchFilterByModuleListAndCUOrSupportFile::Dump(Stream *s) const {}
+
+lldb::SearchFilterSP
+SearchFilterByModuleListAndCUOrSupportFile::DoCopyForBreakpoint(
+    Breakpoint &breakpoint) {
+  return std::make_shared<SearchFilterByModuleListAndCUOrSupportFile>(*this);
+}
+#else
+
 SearchFilterByModuleListAndCUOrSupportFile::
     SearchFilterByModuleListAndCUOrSupportFile(
         const lldb::TargetSP &target_sp, const FileSpecList &module_list,
@@ -858,8 +1083,8 @@ SearchFilterByModuleListAndCUOrSupportFile::
         const SearchFilterByModuleListAndCUOrSupportFile &rhs) = default;
 
 SearchFilterByModuleListAndCUOrSupportFile &
-SearchFilterByModuleListAndCUOrSupportFile::
-operator=(const SearchFilterByModuleListAndCUOrSupportFile &rhs) {
+SearchFilterByModuleListAndCUOrSupportFile::operator=(
+    const SearchFilterByModuleListAndCUOrSupportFile &rhs) {
   if (&rhs != this) {
     m_target_sp = rhs.m_target_sp;
     m_module_spec_list = rhs.m_module_spec_list;
@@ -910,7 +1135,8 @@ SearchFilterByModuleListAndCUOrSupportFile::CreateFromStructuredData(
     success = cusOrSupportFiles_array->GetItemAtIndexAsString(i, cu);
     if (!success) {
       error.SetErrorStringWithFormat(
-          "SFBMACOSF::CFSD: filter CU or support file item %zu not a string.", i);
+          "SFBMACOSF::CFSD: filter CU or support file item %zu not a string.",
+          i);
       return nullptr;
     }
     cusOrSupportFiles.EmplaceBack(cu);
@@ -949,23 +1175,29 @@ bool SearchFilterByModuleListAndCUOrSupportFile::AddressPasses(
   return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
 }
 
-bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(FileSpec &fileSpec) {
-  fprintf(stderr, "SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses 1\n");
-  size_t ret =  m_cu_or_support_file_spec_list.FindFileIndex(0, fileSpec, false) != UINT32_MAX;
-//  FileSpecList fileSpecList;
-//  fileSpecList.Append(fileSpec);
-//  for (auto &stored_filespec : m_cu_or_support_file_spec_list)
-//    if (m_cu_or_support_file_spec_list.FindFileIndex(0, stored_filespec, false) != UINT32_MAX) {
-//      fprintf(stderr, "\n\nReturning TRUE\n\n");
-//      return true;
+bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(
+    FileSpec &fileSpec) {
+  fprintf(stderr,
+          "SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses 1\n");
+  size_t ret = m_cu_or_support_file_spec_list.FindFileIndex(
+                   0, fileSpec, false) != UINT32_MAX;
+  //  FileSpecList fileSpecList;
+  //  fileSpecList.Append(fileSpec);
+  //  for (auto &stored_filespec : m_cu_or_support_file_spec_list)
+  //    if (m_cu_or_support_file_spec_list.FindFileIndex(0, stored_filespec,
+  //    false) != UINT32_MAX) {
+  //      fprintf(stderr, "\n\nReturning TRUE\n\n");
+  //      return true;
 
-//    }
+  //    }
   fprintf(stderr, "\n\nReturning %ld\n\n", ret);
   return ret;
 }
 
-bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(CompileUnit &compUnit) {
-  fprintf(stderr, "SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses 2\n");
+bool SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses(
+    CompileUnit &compUnit) {
+  fprintf(stderr,
+          "SearchFilterByModuleListAndCUOrSupportFile::CompUnitPasses 2\n");
   bool in_cu_list = m_cu_or_support_file_spec_list.FindFileIndex(
                         0, compUnit.GetPrimaryFile(), false) != UINT32_MAX;
   if (in_cu_list) {
@@ -1063,3 +1295,6 @@ SearchFilterByModuleListAndCUOrSupportFile::DoCopyForBreakpoint(
     Breakpoint &breakpoint) {
   return std::make_shared<SearchFilterByModuleListAndCUOrSupportFile>(*this);
 }
+#endif
+
+
