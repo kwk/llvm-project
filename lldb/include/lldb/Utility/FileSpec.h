@@ -70,8 +70,12 @@ public:
   /// \param[in] style
   ///     The style of the path
   ///
+  /// \param[in] normalize
+  ///     Whether or not to cleanup the filepath or not.
+  ///
   /// \see FileSpec::SetFile (const char *path)
-  explicit FileSpec(llvm::StringRef path, Style style = Style::native);
+  explicit FileSpec(llvm::StringRef path, Style style = Style::native,
+                    bool normalize = true);
 
   explicit FileSpec(llvm::StringRef path, const llvm::Triple &triple);
 
@@ -348,7 +352,10 @@ public:
   ///
   /// \param[in] style
   ///     The style for the given path.
-  void SetFile(llvm::StringRef path, Style style);
+  ///
+  /// \param[in] normalize
+  ///     Whether or not to cleanup the filepath or not.
+  void SetFile(llvm::StringRef path, Style style, bool normalize = true);
 
   /// Change the file specified with a new path.
   ///
@@ -362,6 +369,10 @@ public:
   /// \param[in] triple
   ///     The triple which is used to set the Path style.
   void SetFile(llvm::StringRef path, const llvm::Triple &triple);
+
+  /// \returns \c true if the normalized FileSpec is the same as this; otherwise
+  /// \c false is returned.
+  bool IsNormalized() const;
 
   bool IsResolved() const { return m_is_resolved; }
 

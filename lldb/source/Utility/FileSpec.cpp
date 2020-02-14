@@ -68,8 +68,9 @@ void Denormalize(llvm::SmallVectorImpl<char> &path, FileSpec::Style style) {
 FileSpec::FileSpec() : m_style(GetNativeStyle()) {}
 
 // Default constructor that can take an optional full path to a file on disk.
-FileSpec::FileSpec(llvm::StringRef path, Style style) : m_style(style) {
-  SetFile(path, style);
+FileSpec::FileSpec(llvm::StringRef path, Style style, bool normalize)
+    : m_style(style) {
+  SetFile(path, style, normalize);
 }
 
 FileSpec::FileSpec(llvm::StringRef path, const llvm::Triple &triple)
@@ -171,7 +172,7 @@ void FileSpec::SetFile(llvm::StringRef pathname) { SetFile(pathname, m_style); }
 // Update the contents of this object with a new path. The path will be split
 // up into a directory and filename and stored as uniqued string values for
 // quick comparison and efficient memory usage.
-void FileSpec::SetFile(llvm::StringRef pathname, Style style) {
+void FileSpec::SetFile(llvm::StringRef pathname, Style style, bool normalize) {
   m_filename.Clear();
   m_directory.Clear();
   m_is_resolved = false;
@@ -183,11 +184,11 @@ void FileSpec::SetFile(llvm::StringRef pathname, Style style) {
   llvm::SmallString<128> resolved(pathname);
 
   // Normalize the path by removing ".", ".." and other redundant components.
-  if (needsNormalization(resolved))
+  if (normalize && needsNormalization(resolved))
     llvm::sys::path::remove_dots(resolved, true, m_style);
 
   // Normalize back slashes to forward slashes
-  if (m_style == Style::windows)
+  if (normalize && m_style == Style::windows)
     std::replace(resolved.begin(), resolved.end(), '\\', '/');
 
   if (resolved.empty()) {
@@ -211,6 +212,10 @@ void FileSpec::SetFile(llvm::StringRef pathname, Style style) {
 
 void FileSpec::SetFile(llvm::StringRef path, const llvm::Triple &triple) {
   return SetFile(path, triple.isOSWindows() ? Style::windows : Style::posix);
+}
+
+bool FileSpec::IsNormalized() const {
+  return *this == FileSpec(GetPath(), m_style, true);
 }
 
 // Convert to pointer operator. This allows code to check any FileSpec objects
