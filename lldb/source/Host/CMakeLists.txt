@@ -16,6 +16,7 @@ add_host_subdirectory(common
   common/HostThread.cpp
   common/LockFileBase.cpp
   common/LZMA.cpp
+  common/DebugInfoD.cpp
   common/MainLoop.cpp
   common/MonitoringProcessLauncher.cpp
   common/NativeProcessProtocol.cpp
@@ -146,6 +147,9 @@ if (LLDB_ENABLE_LIBEDIT)
 endif()
 if (LLDB_ENABLE_LZMA)
   list(APPEND EXTRA_LIBS ${LIBLZMA_LIBRARIES})
+endif()
+if (LLDB_ENABLE_DEBUGINFOD)
+  list(APPEND EXTRA_LIBS ${Debuginfod_LIBRARIES})
 endif()
 if (WIN32)
   list(APPEND LLDB_SYSTEM_LIBS psapi)

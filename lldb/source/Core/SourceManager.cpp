@@ -29,6 +29,7 @@
 #include "lldb/Utility/RegularExpression.h"
 #include "lldb/Utility/Stream.h"
 #include "lldb/lldb-enumerations.h"
+#include "lldb/Host/DebugInfoD.h"
 
 #include "llvm/ADT/Twine.h"
 
@@ -402,7 +403,9 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
     if (target) {
       m_source_map_mod_id = target->GetSourcePathMap().GetModificationID();
 
-      if (!file_spec.GetDirectory() && file_spec.GetFilename()) {
+      SymbolContext sc;
+      if ((!file_spec.GetDirectory() && file_spec.GetFilename()) ||
+          !FileSystem::Instance().Exists(m_file_spec)) {
         // If this is just a file name, lets see if we can find it in the
         // target:
         bool check_inlines = false;
@@ -416,7 +419,7 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
         bool got_multiple = false;
         if (num_matches != 0) {
           if (num_matches > 1) {
-            SymbolContext sc;
+            // SymbolContext sc;
             CompileUnit *test_cu = nullptr;
 
             for (unsigned i = 0; i < num_matches; i++) {
@@ -432,11 +435,12 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
             }
           }
           if (!got_multiple) {
-            SymbolContext sc;
+            // SymbolContext sc;
             sc_list.GetContextAtIndex(0, sc);
             if (sc.comp_unit)
               m_file_spec = sc.comp_unit->GetPrimaryFile();
-            m_mod_time = FileSystem::Instance().GetModificationTime(m_file_spec);
+            m_mod_time =
+                FileSystem::Instance().GetModificationTime(m_file_spec);
           }
         }
       }
@@ -450,6 +454,31 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
             target->GetImages().FindSourceFile(m_file_spec, new_file_spec)) {
           m_file_spec = new_file_spec;
           m_mod_time = FileSystem::Instance().GetModificationTime(m_file_spec);
+        }
+      }
+
+      // Try finding the file using elfutils' debuginfod
+      if (!FileSystem::Instance().Exists(m_file_spec) &&
+          debuginfod::isAvailable() && sc.module_sp) {
+        llvm::Expected<UUID> buildID =
+            debuginfod::getBuildIDFromModule(sc.module_sp);
+        if (auto err = buildID.takeError()) {
+          sc.module_sp->ReportWarning("An error occurred while getting the "
+                                      "build ID from the module: %s",
+                                      llvm::toString(std::move(err)).c_str());
+        } else {
+          std::string cache_path;
+          err = debuginfod::findSource(*buildID, file_spec.GetCString(),
+                                       cache_path);
+          if (err) {
+            sc.module_sp->ReportWarning("An error occurred while finding the "
+                                        "source file %s using debuginfod: %s",
+                                        file_spec.GetCString(),
+                                        llvm::toString(std::move(err)).c_str());
+          } else {
+            m_file_spec = FileSpec(cache_path);
+            m_mod_time = FileSystem::Instance().GetModificationTime(cache_path);
+          }
         }
       }
     }

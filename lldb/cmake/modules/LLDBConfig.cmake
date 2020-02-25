@@ -58,6 +58,7 @@ add_optional_dependency(LLDB_ENABLE_LZMA "Enable LZMA compression support in LLD
 add_optional_dependency(LLDB_ENABLE_LUA "Enable Lua scripting support in LLDB" LuaAndSwig LUAANDSWIG_FOUND)
 add_optional_dependency(LLDB_ENABLE_PYTHON "Enable Python scripting support in LLDB" PythonInterpAndLibs PYTHONINTERPANDLIBS_FOUND)
 add_optional_dependency(LLDB_ENABLE_LIBXML2 "Enable Libxml 2 support in LLDB" LibXml2 LIBXML2_FOUND VERSION 2.8)
+add_optional_dependency(LLDB_ENABLE_DEBUGINFOD "Enable Debuginfod support in LLDB" Debuginfod Debuginfod_FOUND)
 
 option(LLDB_USE_SYSTEM_SIX "Use six.py shipped with system and do not install a copy of it" OFF)
 option(LLDB_USE_ENTITLEMENTS "When codesigning, use entitlements if available" ON)
@@ -231,6 +232,10 @@ message(STATUS "LLDB version: ${LLDB_VERSION}")
 
 if (LLDB_ENABLE_LZMA)
   include_directories(${LIBLZMA_INCLUDE_DIRS})
+endif()
+
+if (LLDB_ENABLE_DEBUGINFOD)
+  include_directories(${Debuginfod_INCLUDE_DIRS})
 endif()
 
 if (LLDB_ENABLE_LIBXML2)
