@@ -11,6 +11,7 @@
 #include "lldb/Symbol/ObjectFile.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
+#include "lldb/Host/DebugInfoD.h"
 
 #if LLDB_ENABLE_DEBUGINFOD
 #include "elfutils/debuginfod.h"
@@ -26,7 +27,7 @@ using namespace lldb_private;
 #if !LLDB_ENABLE_DEBUGINFOD
 bool isAvailable() { return false; }
 
-llvm::Expected<UUID> getBuildIDFromModule(const ModuleSP &module) {
+UUID getBuildIDFromModule(const ModuleSP &module) {
   llvm_unreachable("debuginfod::getBuildIDFromModule is unavailable");
 };
 
@@ -39,7 +40,7 @@ llvm::Error findSource(UUID buildID, const std::string &path,
 
 bool isAvailable() { return true; }
 
-llvm::Expected<UUID> getBuildIDFromModule(const ModuleSP &module) {
+UUID getBuildIDFromModule(const ModuleSP &module) {
   UUID buildID;
 
   if (!module)
@@ -92,7 +93,7 @@ llvm::Error findSource(UUID buildID, const std::string &path,
 
   if (rc < 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "buginfod_find_source query failed: %s",
+                                   "debuginfod_find_source query failed: %s",
                                    strerror(-rc));
 
   if (cache_path) {

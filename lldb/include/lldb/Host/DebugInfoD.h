@@ -21,7 +21,7 @@ namespace debuginfod {
 	
 bool isAvailable();
 
-llvm::Expected<UUID> getBuildIDFromModule(const lldb::ModuleSP &module);
+UUID getBuildIDFromModule(const lldb::ModuleSP &module);
 
 llvm::Error findSource(UUID buildID, const std::string &path,
                        std::string &result_path);
