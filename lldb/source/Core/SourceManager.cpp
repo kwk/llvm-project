@@ -15,6 +15,7 @@
 #include "lldb/Core/Highlighter.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Core/ModuleList.h"
+#include "lldb/Host/DebugInfoD.h"
 #include "lldb/Host/FileSystem.h"
 #include "lldb/Symbol/CompileUnit.h"
 #include "lldb/Symbol/Function.h"
@@ -29,7 +30,6 @@
 #include "lldb/Utility/RegularExpression.h"
 #include "lldb/Utility/Stream.h"
 #include "lldb/lldb-enumerations.h"
-#include "lldb/Host/DebugInfoD.h"
 
 #include "llvm/ADT/Twine.h"
 
