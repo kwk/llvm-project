@@ -460,18 +460,17 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
       // Try finding the file using elfutils' debuginfod
       if (!FileSystem::Instance().Exists(m_file_spec) &&
           debuginfod::isAvailable() && sc.module_sp) {
-        UUID buildID = debuginfod::getBuildIDFromModule(sc.module_sp);
-        std::string cache_path;
-        llvm::Error err =
-            debuginfod::findSource(buildID, file_spec.GetCString(), cache_path);
-        if (err) {
-          sc.module_sp->ReportWarning("An error occurred while finding the "
-                                      "source file %s using debuginfod: %s",
-                                      file_spec.GetCString(),
-                                      llvm::toString(std::move(err)).c_str());
-        } else {
-          m_file_spec = FileSpec(cache_path);
-          m_mod_time = FileSystem::Instance().GetModificationTime(cache_path);
+        llvm::Expected<std::string> cache_path = debuginfod::findSource(
+            sc.module_sp->GetUUID(), file_spec.GetCString());
+        if (!cache_path) {
+          sc.module_sp->ReportWarning(
+              "An error occurred while finding the "
+              "source file %s using debuginfod: %s",
+              file_spec.GetCString(),
+              llvm::toString(cache_path.takeError()).c_str());
+        } else if (!cache_path->empty()) {
+          m_file_spec = FileSpec(*cache_path);
+          m_mod_time = FileSystem::Instance().GetModificationTime(*cache_path);
         }
       }
     }

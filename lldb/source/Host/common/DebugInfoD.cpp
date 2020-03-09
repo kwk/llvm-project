@@ -6,12 +6,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "lldb/Host/DebugInfoD.h"
 #include "lldb/Core/Module.h"
 #include "lldb/Host/Config.h"
 #include "lldb/Symbol/ObjectFile.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Error.h"
-#include "lldb/Host/DebugInfoD.h"
+#include "llvm/Support/Errno.h"
 
 #if LLDB_ENABLE_DEBUGINFOD
 #include "elfutils/debuginfod.h"
@@ -27,12 +27,8 @@ using namespace lldb_private;
 #if !LLDB_ENABLE_DEBUGINFOD
 bool isAvailable() { return false; }
 
-UUID getBuildIDFromModule(const ModuleSP &module) {
-  llvm_unreachable("debuginfod::getBuildIDFromModule is unavailable");
-};
-
 llvm::Error findSource(UUID buildID, const std::string &path,
-                       std::string &cache_path, sys::TimePoint<> &mod_time) {
+                       std::string &cache_path) {
   llvm_unreachable("debuginfod::findSource is unavailable");
 }
 
@@ -40,34 +36,7 @@ llvm::Error findSource(UUID buildID, const std::string &path,
 
 bool isAvailable() { return true; }
 
-UUID getBuildIDFromModule(const ModuleSP &module) {
-  UUID buildID;
-
-  if (!module)
-    return buildID;
-
-  const FileSpec &moduleFileSpec = module->GetFileSpec();
-  ModuleSpecList specList;
-  size_t nSpecs =
-      ObjectFile::GetModuleSpecifications(moduleFileSpec, 0, 0, specList);
-
-  for (size_t i = 0; i < nSpecs; i++) {
-    ModuleSpec spec;
-    if (!specList.GetModuleSpecAtIndex(i, spec))
-      continue;
-
-    const UUID &uuid = spec.GetUUID();
-    if (!uuid.IsValid())
-      continue;
-
-    buildID = uuid;
-    break;
-  }
-  return buildID;
-}
-
-llvm::Error findSource(UUID buildID, const std::string &path,
-                       std::string &result_path) {
+llvm::Expected<std::string> findSource(UUID buildID, const std::string &path) {
   if (!buildID.IsValid())
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "invalid build ID: %s",
@@ -91,27 +60,34 @@ llvm::Error findSource(UUID buildID, const std::string &path,
                                   buildID.GetBytes().size(), path.c_str(),
                                   &cache_path);
 
-  if (rc < 0)
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "debuginfod_find_source query failed: %s",
-                                   strerror(-rc));
+  debuginfod_end(client);
 
+  std::string result_path;
   if (cache_path) {
     result_path = std::string(cache_path);
     free(cache_path);
   }
 
-  llvm::Error err = llvm::Error::success();
-  if (close(rc) < 0) {
-    err = llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "failed to close result of call to debuginfo_find_source: %s",
-        strerror(errno));
+  if (rc < 0) {
+    if (rc == -ENOSYS) // No DEBUGINFO_URLS were specified
+      return result_path;
+    else if (rc == -ENOENT) // No such file or directory, aka build-id not
+                            // available on servers.
+      return result_path;
+    else
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "debuginfod_find_source query failed: %s",
+                                     llvm::sys::StrError(-rc).c_str());
   }
 
-  debuginfod_end(client);
+  if (close(rc) < 0) {
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "failed to close result of call to debuginfo_find_source: %s",
+        llvm::sys::StrError(errno).c_str());
+  }
 
-  return err;
+  return result_path;
 }
 
 #endif // LLDB_ENABLE_DEBUGINFOD
