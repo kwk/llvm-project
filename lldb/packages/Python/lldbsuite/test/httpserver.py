@@ -5,7 +5,7 @@ The http module contains an easy and ready-to-use HTTP file server.
 o ServeDirectoryWithHTTP: Spawns an HTTP file server in a separate thread.
 """
 
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+import http.server
 from threading import Thread, current_thread
 from sys import stderr
 from functools import partial
@@ -55,14 +55,14 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
     ...
     Address: http://localhost...:...
     >>> try:
-    ...     url = address + "/http.py"
+    ...     url = address + "/httpserver.py"
     ...     print("Getting URL:", url) # doctest:+ELLIPSIS
     ...     with urlopen(url) as f:
     ...         print("Code:", f.getcode())
     ... finally:
     ...     httpd.shutdown()
     ...
-    Getting URL: http://localhost...:.../http.py
+    Getting URL: http://localhost...:.../httpserver.py
     Code: 200
 
     In the example above, you can call f.read() to read the content of the file
@@ -71,7 +71,7 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
     """
 
     handler = partial(_SimpleRequestHandler, directory=directory)
-    httpd = HTTPServer((hostname, port), handler, False)
+    httpd = http.server.HTTPServer((hostname, port), handler, False)
     # Block only for 0.5 seconds max
     httpd.timeout = 0.5
     # Allow for reusing the address
@@ -84,7 +84,7 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
 
-    _xprint("activate server")
+    _xprint("server is about to listen")
     httpd.server_activate()
 
     def serve_forever(httpd):
@@ -106,14 +106,14 @@ def _xprint(*args, **kwargs):
           " ".join(map(str, args)), **kwargs, file=stderr)
 
 
-class _SimpleRequestHandler(SimpleHTTPRequestHandler):
+class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Same as SimpleHTTPRequestHandler except that we prefix the current thread
     name to any given log message.
     """
 
     def log_message(self, format, *args):
         stderr.write("[ " + current_thread().name + " ] ")
-        SimpleHTTPRequestHandler.log_message(self, format, *args)
+        http.server.SimpleHTTPRequestHandler.log_message(self, format, *args)
 
 
 if __name__ == "__main__":
