@@ -45,7 +45,7 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     str
         The address of the server as a string, e.g. "http://localhost:1234".
-    
+
     Examples
     --------
     >>> from httpserver import ServeDirectoryWithHTTP
@@ -116,6 +116,7 @@ class _SimpleRequestHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         stderr.write("[ " + current_thread().name + " ] ")
         SimpleHTTPRequestHandler.log_message(self, format, *args)
+
 
 if __name__ == "__main__":
     from doctest import testmod
