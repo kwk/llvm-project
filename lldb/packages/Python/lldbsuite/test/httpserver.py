@@ -81,7 +81,7 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
     httpd.allow_reuse_address = True
 
     # Bind to get a port
-    _xprint("server about to bind")
+    _xprint("server about to bind to port %d on hostname %s" % (port, hostname))
     httpd.server_bind()
 
     address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
