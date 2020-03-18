@@ -120,4 +120,4 @@ class _SimpleRequestHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     from doctest import testmod
-    doctest.testmod(verbose=True)
+    testmod(verbose=True)
