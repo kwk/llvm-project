@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-The http module contains an easy and ready-to-use HTTP file server.
+The httpserver module contains an easy and ready-to-use HTTP file server.
 
 o ServeDirectoryWithHTTP: Spawns an HTTP file server in a separate thread.
 """
@@ -79,19 +79,19 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
     httpd.allow_reuse_address = True
 
     # Bind to get a port
-    _xprint("bind server")
+    _xprint("server about to bind")
     httpd.server_bind()
 
     address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
 
-    _xprint("server is about to listen")
+    _xprint("server about to listen")
     httpd.server_activate()
 
     def serve_forever(httpd):
         with httpd:  # to make sure httpd.server_close is called
-            _xprint("entering infinite request loop")
+            _xprint("server about to enter infinite request loop")
             httpd.serve_forever()
-            _xprint("left infinite request loop")
+            _xprint("server left infinite request loop")
 
     thread = Thread(target=serve_forever, args=(httpd, ))
     thread.setDaemon(True)
@@ -107,11 +107,10 @@ def _xprint(*args, **kwargs):
 
 
 class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
-    """Same as SimpleHTTPRequestHandler except that we prefix the current thread
-    name to any given log message.
-    """
+    """Same as SimpleHTTPRequestHandler with adjusted logging."""
 
     def log_message(self, format, *args):
+        """Log an arbitrary message and prepend the given thread name."""
         stderr.write("[ " + current_thread().name + " ] ")
         http.server.SimpleHTTPRequestHandler.log_message(self, format, *args)
 
