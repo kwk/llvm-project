@@ -465,8 +465,9 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
         if (!cache_path) {
           sc.module_sp->ReportWarning(
               "An error occurred while finding the "
-              "source file %s using debuginfod: %s",
+              "source file %s using debuginfod for build ID %s: %s",
               file_spec.GetCString(),
+              sc.module_sp->GetUUID().GetAsString("").c_str(),
               llvm::toString(cache_path.takeError()).c_str());
         } else if (!cache_path->empty()) {
           m_file_spec = FileSpec(*cache_path);

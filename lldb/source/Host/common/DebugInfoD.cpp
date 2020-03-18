@@ -75,9 +75,10 @@ llvm::Expected<std::string> findSource(UUID buildID, const std::string &path) {
                             // available on servers.
       return result_path;
     else
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "debuginfod_find_source query failed: %s",
-                                     llvm::sys::StrError(-rc).c_str());
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "debuginfod_find_source query failed (CODE=%d): %s", -rc,
+          llvm::sys::StrError(-rc).c_str());
   }
 
   if (close(rc) < 0) {

@@ -117,6 +117,9 @@ if config.lldb_enable_lua:
 if config.lldb_enable_lzma:
     config.available_features.add('lzma')
 
+if config.lldb_enable_debuginfod:
+    config.available_features.add('debuginfod')
+
 if find_executable('xz') != None:
     config.available_features.add('xz')
 
