@@ -89,8 +89,6 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     def serve_forever(httpd):
         with httpd:  # to make sure httpd.server_close is called
-            # _xprint("simulating startup time")
-            # time.sleep(10)
             _xprint("entering infinite request loop")
             httpd.serve_forever()
             _xprint("left infinite request loop")
