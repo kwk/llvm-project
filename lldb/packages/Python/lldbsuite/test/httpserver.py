@@ -12,23 +12,18 @@ from functools import partial
 from os.path import abspath
 
 
-def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
+def ServeDirectoryWithHTTP(directory="."):
     """Spawns an http.server.HTTPServer in a separate thread on the given port.
 
-    The server serves files from the given *directory*.
+    The server serves files from the given *directory*. The port listening on
+    will automatically be picked by the operating system to avoid race
+    conditions when trying to bind to an open port that turns out not to be
+    free afterall. The hostname is always "localhost".
 
     Parameters
     ----------
     directory : str, optional
         The directory to server files from. Defaults to the current directory.
-
-    port : int, optional
-        If port is 0 (the default), the port will be picked by the operating
-        system. For testing it makes sense to use a port chosen by the OS
-        because it is guaranteed to be free and not in use.
-
-    hostname : str, optional
-        The hostname to open the socket on. Defaults to "localhost".
 
     Returns
     -------
@@ -71,16 +66,17 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     """
 
+    hostname = "localhost"
+    port = 0
     directory = abspath(directory)
     handler = partial(_SimpleRequestHandler, directory=directory)
-    httpd = http.server.HTTPServer((hostname, port), handler, False)
+    httpd = http.server.HTTPServer((hostname, 0), handler, False)
     # Block only for 0.5 seconds max
     httpd.timeout = 0.5
     # Allow for reusing the address
     # HTTPServer sets this as well but I wanted to make this more obvious.
     httpd.allow_reuse_address = True
 
-    # Bind to get a port
     _xprint("server about to bind to port %d on hostname '%s'" % (port, hostname))
     httpd.server_bind()
 
