@@ -9,6 +9,7 @@ import http.server
 from threading import Thread, current_thread
 from sys import stderr
 from functools import partial
+from os.path import abspath
 
 
 def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
@@ -70,6 +71,8 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     """
 
+    directory = abspath(directory)
+    _xprint("server serving files from directory:", directory)
     handler = partial(_SimpleRequestHandler, directory=directory)
     httpd = http.server.HTTPServer((hostname, port), handler, False)
     # Block only for 0.5 seconds max
