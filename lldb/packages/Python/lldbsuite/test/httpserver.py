@@ -72,7 +72,6 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
     """
 
     directory = abspath(directory)
-    _xprint("server serving files from directory:", directory)
     handler = partial(_SimpleRequestHandler, directory=directory)
     httpd = http.server.HTTPServer((hostname, port), handler, False)
     # Block only for 0.5 seconds max
@@ -87,12 +86,12 @@ def ServeDirectoryWithHTTP(directory=".", port=0, hostname="localhost"):
 
     address = "http://%s:%d" % (httpd.server_name, httpd.server_port)
 
-    _xprint("server about to listen")
+    _xprint("server about to listen on:", address)
     httpd.server_activate()
 
     def serve_forever(httpd):
         with httpd:  # to make sure httpd.server_close is called
-            _xprint("server about to enter infinite request loop")
+            _xprint("server about to serve files from directory (infinite request loop):", directory)
             httpd.serve_forever()
             _xprint("server left infinite request loop")
 
