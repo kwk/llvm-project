@@ -13,10 +13,6 @@
 #include "llvm/ADT/Optional.h"
 #include "llvm/Support/Error.h"
 
-namespace llvm {
-class Error;
-} // End of namespace llvm
-
 namespace lldb_private {
 
 namespace debuginfod {
