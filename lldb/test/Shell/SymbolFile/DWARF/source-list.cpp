@@ -53,7 +53,7 @@
 
 // RUN: rm -fv "%t.server.log"
 // RUN: timeout 5 python3 -u -m http.server 0 --directory %t.mock --bind "localhost" &> %t.server.log & export PID=$!
-// RUN: trap 'echo "SERVER LOG:"; cat %t.server.log; kill $PID;' EXIT INT
+// RUN: trap 'kill $PID;' EXIT INT
 
 
 //    Extract HTTP address from the first line of the server log
@@ -99,7 +99,7 @@
 
 // TEST-3: (lldb) source list -n main
 // TEST-3: File: /my/new/path/test.cpp
-// TEST-3:         116
+// TEST-3:         122
 // TEST-3-NEXT:    {{[0-9]+}}   // Some context lines before
 // TEST-3-NEXT:    {{[0-9]+}}   // the function.
 // TEST-3-NEXT:    {{[0-9]+}}
@@ -113,6 +113,12 @@
 // TEST-3-NEXT:    {{[0-9]+}}   // Some context lines after
 // TEST-3-NEXT:    {{[0-9]+}}   // the function.
 // TEST-3-EMPTY:
+
+//    Validate that the server received the request from debuginfod client.
+
+// RUN: cat %t.server.log | FileCheck --dump-input=fail %s --check-prefix=VALIDATION
+// VALIDATION: 127.0.0.1 - - [{{.*}}] "GET /buildid/aaaaaaaaaabbbbbbbbbbccccccccccdddddddddd/source/my/new/path/test.cpp HTTP/1.1" 200 -
+
 
 // Some context lines before
 // the function.
