@@ -27,7 +27,7 @@ using namespace lldb_private;
 #if !LLDB_ENABLE_DEBUGINFOD
 bool isAvailable() { return false; }
 
-llvm::Error findSource(UUID buildID, const std::string &path,
+llvm::Error findSource(const UUID &buildID, const std::string &path,
                        std::string &cache_path) {
   llvm_unreachable("debuginfod::findSource is unavailable");
 }
@@ -36,8 +36,11 @@ llvm::Error findSource(UUID buildID, const std::string &path,
 
 bool isAvailable() { return true; }
 
-llvm::Expected<std::string> findSource(UUID buildID, const std::string &path) {
-  if (!buildID.IsValid())
+llvm::Expected<std::string> findSource(const UUID &buildID,
+                                       const std::string &path) {
+  if (!buildID.IsValid() ||
+      buildID.GetBytes().size() ==
+          sizeof(llvm::support::ulittle32_t)) // .gnu_debuglink crc32
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "invalid build ID: %s",
                                    buildID.GetAsString("").c_str());

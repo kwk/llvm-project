@@ -24,7 +24,8 @@ bool isAvailable();
 // Asks all servers in environment variable \c DEBUGINFOD_URLS for the \a path
 // of an artifact with a given \a buildID and returns the path to a locally
 // cached version of the file. If there  was an error, we return that instead.
-llvm::Expected<std::string> findSource(UUID buildID, const std::string &path);
+llvm::Expected<std::string> findSource(const UUID &buildID,
+                                       const std::string &path);
 
 } // End of namespace debuginfod
 
