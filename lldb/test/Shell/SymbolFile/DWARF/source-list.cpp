@@ -20,9 +20,10 @@
 // RUN: mkdir -p %t.buildroot
 // RUN: cp %s %t.buildroot/test.cpp
 
-
-//    We cd into the directory before compiling to get DW_AT_comp_dir pickup
-//    %t.buildroot as well so it will be replaced by /my/new/path.
+//    We use the prefix map in order to overwrite all DW_AT_decl_file paths
+//    in the DWARF. We cd into the directory before compiling to get
+//    DW_AT_comp_dir pickup %t.buildroot as well so it will be replaced by
+//    /my/new/path.
 
 // RUN: cd %t.buildroot
 // RUN: %clang_host \
@@ -30,7 +31,7 @@
 // RUN:   -Wl,--build-id="0xaaaaaaaaaabbbbbbbbbbccccccccccdddddddddd" \
 // RUN:   -fdebug-prefix-map=%t.buildroot=/my/new/path \
 // RUN:   -o %t \
-// RUN:   test.cpp
+// RUN:   %t.buildroot/test.cpp
 
 
 //    We move the original source file to a directory that looks like a debuginfod
@@ -38,7 +39,7 @@
 
 // RUN: rm -rf %t.mock
 // RUN: mkdir -p       %t.mock/buildid/aaaaaaaaaabbbbbbbbbbccccccccccdddddddddd/source/my/new/path
-// RUN: mv    test.cpp %t.mock/buildid/aaaaaaaaaabbbbbbbbbbccccccccccdddddddddd/source/my/new/path
+// RUN: mv    %t.buildroot/test.cpp %t.mock/buildid/aaaaaaaaaabbbbbbbbbbccccccccccdddddddddd/source/my/new/path
 
 
 //    Adjust where debuginfod stores cache files:
