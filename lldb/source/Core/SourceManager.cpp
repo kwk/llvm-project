@@ -419,7 +419,6 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
         bool got_multiple = false;
         if (num_matches != 0) {
           if (num_matches > 1) {
-            // SymbolContext sc;
             CompileUnit *test_cu = nullptr;
 
             for (unsigned i = 0; i < num_matches; i++) {
@@ -435,7 +434,6 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
             }
           }
           if (!got_multiple) {
-            // SymbolContext sc;
             sc_list.GetContextAtIndex(0, sc);
             if (sc.comp_unit)
               m_file_spec = sc.comp_unit->GetPrimaryFile();
