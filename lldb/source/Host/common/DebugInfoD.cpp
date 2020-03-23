@@ -52,12 +52,6 @@ llvm::Expected<std::string> findSource(const UUID &buildID,
         llvm::inconvertibleErrorCode(),
         "failed to create debuginfod connection handle: %s", strerror(errno));
 
-  // debuginfod_set_progressfn(client, [](debuginfod_client *client, long a,
-  //                                 long b) -> int {
-  //   fprintf(stderr, "KWK === a: %ld b : %ld \n", a, b);
-  //   return 0; // continue
-  // });
-
   char *cache_path = nullptr;
   int rc = debuginfod_find_source(client, buildID.GetBytes().data(),
                                   buildID.GetBytes().size(), path.c_str(),
