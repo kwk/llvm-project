@@ -38,9 +38,7 @@ bool isAvailable() { return true; }
 
 llvm::Expected<std::string> findSource(const UUID &buildID,
                                        const std::string &path) {
-  if (!buildID.IsValid() ||
-      buildID.GetBytes().size() ==
-          sizeof(llvm::support::ulittle32_t)) // .gnu_debuglink crc32
+  if (!buildID.IsValid() || buildID.GetBytes().size() <= 8)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "invalid build ID: %s",
                                    buildID.GetAsString("").c_str());
