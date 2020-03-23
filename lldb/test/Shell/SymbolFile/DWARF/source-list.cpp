@@ -43,15 +43,15 @@
 
 //    Adjust where debuginfod stores cache files:
 
-// RUN: rm -rfv %t.debuginfod_cache_path
-// RUN: mkdir -pv %t.debuginfod_cache_path
+// RUN: rm -rf %t.debuginfod_cache_path
+// RUN: mkdir -p %t.debuginfod_cache_path
 // RUN: export DEBUGINFOD_CACHE_PATH=%t.debuginfod_cache_path
 
 
 //    Start HTTP file server on port picked by OS and wait until it is ready
 //    The server will be closed on exit of the test.
 
-// RUN: rm -fv "%t.server.log"
+// RUN: rm -f "%t.server.log"
 // RUN: timeout 5 python3 -u -m http.server 0 --directory %t.mock --bind "localhost" &> %t.server.log & export PID=$!
 // RUN: trap 'kill $PID;' EXIT INT
 
