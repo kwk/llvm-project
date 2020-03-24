@@ -38,6 +38,12 @@ bool isAvailable() { return true; }
 
 llvm::Expected<std::string> findSource(const UUID &buildID,
                                        const std::string &path) {
+  // This check works around UUIDs that are not build-ids. For example, callers
+  // of this function use Module::GetUUID() which calls ObjectFileELF::GetUUID()
+  // (in case of the ELF binary format) which has two fallback strategies for
+  // returning a UUID when no UUID for the object was found in the section
+  // header. Those UUIDs have a length of 8 or 4 bytes, which is why we exclude
+  // these lengths.
   if (!buildID.IsValid() || buildID.GetBytes().size() <= 8)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "invalid build ID: %s",
