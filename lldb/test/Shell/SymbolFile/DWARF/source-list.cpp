@@ -100,7 +100,7 @@
 
 // TEST-3: (lldb) source list -n main
 // TEST-3: File: /my/new/path/test.cpp
-// TEST-3:         123
+// TEST-3:         {{[0-9]+}}
 // TEST-3-NEXT:    {{[0-9]+}}   // Some context lines before
 // TEST-3-NEXT:    {{[0-9]+}}   // the function.
 // TEST-3-NEXT:    {{[0-9]+}}
