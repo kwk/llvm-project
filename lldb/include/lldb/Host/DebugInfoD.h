@@ -24,7 +24,8 @@ bool isAvailable();
 // Asks all servers in environment variable \c DEBUGINFOD_URLS for the \a path
 // of an artifact with a given \a buildID and returns the path to a locally
 // cached version of the file. If there  was an error, we return that instead.
-// If the file wasn't found on the server, the returned string is empty.
+// If the file wasn't found on the server or if the UUID is shorter than or
+// equal to 8 bytes, the returned string is empty.
 llvm::Expected<std::string> findSource(const UUID &buildID,
                                        const std::string &path);
 
