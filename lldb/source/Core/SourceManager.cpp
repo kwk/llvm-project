@@ -456,8 +456,8 @@ void SourceManager::File::CommonInitializer(const FileSpec &file_spec,
       }
 
       // Try finding the file using elfutils' debuginfod
-      if (!FileSystem::Instance().Exists(m_file_spec) &&
-          debuginfod::isAvailable() && sc.module_sp) {
+      if (debuginfod::isAvailable() &&
+          !FileSystem::Instance().Exists(m_file_spec) && sc.module_sp) {
         llvm::Expected<std::string> cache_path = debuginfod::findSource(
             sc.module_sp->GetUUID(), file_spec.GetCString());
         if (!cache_path) {
