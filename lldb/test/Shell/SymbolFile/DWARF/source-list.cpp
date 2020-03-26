@@ -7,9 +7,9 @@
 //  
 //  The debuginfod client requires a buildid in the binary, so we compile one in.
 //  We can create the directory structure on disc that the client expects on a
-//  webserver that serves source files. Then we fire up a python based http
-//  server in the root of that mock directory, set the DEBUGINFOD_URLS
-//  environment variable and let LLDB do the rest. 
+//  webserver that serves source files. We then set DEBUGINFOD_URLS to the mock
+//  directory using file://<path-to-mock-dir>. This avoids the need for a
+//  debuginfod server to be run. 
 //  
 //  Go here to find more about debuginfod:
 //  https://sourceware.org/elfutils/Debuginfod.html
@@ -49,27 +49,6 @@
 // RUN: export DEBUGINFOD_CACHE_PATH=%t.debuginfod_cache_path
 
 
-//    Start HTTP file server on port picked by OS and wait until it is ready
-//    The server will be closed on exit of the test.
-
-// RUN: rm -f "%t.server.log"
-// RUN: timeout 5 python3 -u -m http.server 0 --directory %t.mock --bind "localhost" &> %t.server.log & export PID=$!
-// RUN: trap 'kill $PID;' EXIT INT
-
-
-//    Extract HTTP address from the first line of the server log
-//    (e.g. "Serving HTTP on 127.0.0.1 port 40587 (http://127.0.0.1:40587/) ..")
-
-// RUN: echo -n "Waiting for server to be ready"
-// RUN: SERVER_ADDRESS=""
-// RUN: while [ -z "$SERVER_ADDRESS" ]; do \
-// RUN:     echo -n "."; \
-// RUN:     sleep 0.01; \
-// RUN:     SERVER_ADDRESS=$(head -n1 %t.server.log | grep "http://.\+/\+" -o); \
-// RUN: done
-// RUN: echo "DONE"
-
-
 //-- TEST 1 --  No debuginfod awareness ----------------------------------------
 
 
@@ -95,7 +74,7 @@
 //-- TEST 3 -- debuginfod URL pointing corectly --------------------------------
 
 
-// RUN: DEBUGINFOD_URLS="$SERVER_ADDRESS" \
+// RUN: DEBUGINFOD_URLS="file://%t.mock/" \
 // RUN: %lldb -f %t -o 'source list -n main' | FileCheck --dump-input=fail %s --check-prefix=TEST-3
 
 // TEST-3: (lldb) source list -n main
