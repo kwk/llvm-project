@@ -49,8 +49,24 @@ class StringList;
 
 class PluginManager {
 public:
+  /// Recursively loads and initializes all plugins (dynamic libraries) from the
+  /// system-wide and user-based directories and their sub-directories.
+  ///
+  /// Initialiaziation is done by finding and calling the function
+  /// "LLDBPluginInitialize" in the plugin. That function takes no arguments and
+  /// returns a boolean.
+  ///
+  /// Each plugin (irrespective of success or error during loading) is
+  /// registered in a mutex-secured static map that is later used for
+  /// terminating each plugin.
+  ///
+  /// The system-wide (e.g. /usr/lib<LLDB_LIBDIR_SUFFIX>/lldb/plugins) and
+  /// user-based (e.g. ~/.local/share/lldb) plugin directories are OS-dependent.
   static void Initialize();
 
+  /// Walks over the map of plugins that were created in \c Initialize() and
+  /// terminates each plugin by calling an optionally defined, plugin-specific
+  /// callback function called "LLDBPluginTerminate".
   static void Terminate();
 
   // ABI

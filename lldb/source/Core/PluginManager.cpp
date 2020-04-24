@@ -34,6 +34,15 @@
 using namespace lldb;
 using namespace lldb_private;
 
+#define GET_KIND_INSTANCES(KIND)                                               \
+  typedef PluginInstance<KIND##CreateInstance> KIND##Instance;                 \
+  typedef PluginInstances<KIND##Instance> KIND##Instances;                     \
+                                                                               \
+  static KIND##Instances &Get##KIND##Instances() {                             \
+    static KIND##Instances g_instances;                                        \
+    return g_instances;                                                        \
+  }
+
 typedef bool (*PluginInitCallback)();
 typedef void (*PluginTermCallback)();
 
@@ -168,13 +177,12 @@ void PluginManager::Terminate() {
   std::lock_guard<std::recursive_mutex> guard(GetPluginMapMutex());
   PluginTerminateMap &plugin_map = GetPluginMap();
 
-  PluginTerminateMap::const_iterator pos, end = plugin_map.end();
-  for (pos = plugin_map.begin(); pos != end; ++pos) {
+  for (auto & e: plugin_map) {
     // Call the plug-in "void LLDBPluginTerminate (void)" function if there is
     // one (if the symbol was not nullptr).
-    if (pos->second.library.isValid()) {
-      if (pos->second.plugin_term_callback)
-        pos->second.plugin_term_callback();
+    if (e.second.library.isValid()) {
+      if (e.second.plugin_term_callback)
+        e.second.plugin_term_callback();
     }
   }
   plugin_map.clear();
@@ -273,15 +281,8 @@ private:
   std::vector<Instance> m_instances;
 };
 
-#pragma mark ABI
-
-typedef PluginInstance<ABICreateInstance> ABIInstance;
-typedef PluginInstances<ABIInstance> ABIInstances;
-
-static ABIInstances &GetABIInstances() {
-  static ABIInstances g_instances;
-  return g_instances;
-}
+#pragma mark ABIs
+GET_KIND_INSTANCES(ABI)
 
 bool PluginManager::RegisterPlugin(ConstString name, const char *description,
                                    ABICreateInstance create_callback) {
@@ -297,14 +298,7 @@ ABICreateInstance PluginManager::GetABICreateCallbackAtIndex(uint32_t idx) {
 }
 
 #pragma mark Architecture
-
-typedef PluginInstance<ArchitectureCreateInstance> ArchitectureInstance;
-typedef std::vector<ArchitectureInstance> ArchitectureInstances;
-
-static ArchitectureInstances &GetArchitectureInstances() {
-  static ArchitectureInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(Architecture)
 
 void PluginManager::RegisterPlugin(ConstString name,
                                    llvm::StringRef description,
@@ -336,14 +330,7 @@ PluginManager::CreateArchitectureInstance(const ArchSpec &arch) {
 }
 
 #pragma mark Disassembler
-
-typedef PluginInstance<DisassemblerCreateInstance> DisassemblerInstance;
-typedef PluginInstances<DisassemblerInstance> DisassemblerInstances;
-
-static DisassemblerInstances &GetDisassemblerInstances() {
-  static DisassemblerInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(Disassembler)
 
 bool PluginManager::RegisterPlugin(ConstString name, const char *description,
                                    DisassemblerCreateInstance create_callback) {
@@ -367,14 +354,7 @@ PluginManager::GetDisassemblerCreateCallbackForPluginName(ConstString name) {
 }
 
 #pragma mark DynamicLoader
-
-typedef PluginInstance<DynamicLoaderCreateInstance> DynamicLoaderInstance;
-typedef PluginInstances<DynamicLoaderInstance> DynamicLoaderInstances;
-
-static DynamicLoaderInstances &GetDynamicLoaderInstances() {
-  static DynamicLoaderInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(DynamicLoader)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -400,14 +380,7 @@ PluginManager::GetDynamicLoaderCreateCallbackForPluginName(ConstString name) {
 }
 
 #pragma mark JITLoader
-
-typedef PluginInstance<JITLoaderCreateInstance> JITLoaderInstance;
-typedef PluginInstances<JITLoaderInstance> JITLoaderInstances;
-
-static JITLoaderInstances &GetJITLoaderInstances() {
-  static JITLoaderInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(JITLoader)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -427,15 +400,7 @@ PluginManager::GetJITLoaderCreateCallbackAtIndex(uint32_t idx) {
 }
 
 #pragma mark EmulateInstruction
-
-typedef PluginInstance<EmulateInstructionCreateInstance>
-    EmulateInstructionInstance;
-typedef PluginInstances<EmulateInstructionInstance> EmulateInstructionInstances;
-
-static EmulateInstructionInstances &GetEmulateInstructionInstances() {
-  static EmulateInstructionInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(EmulateInstruction)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -461,14 +426,7 @@ PluginManager::GetEmulateInstructionCreateCallbackForPluginName(
 }
 
 #pragma mark OperatingSystem
-
-typedef PluginInstance<OperatingSystemCreateInstance> OperatingSystemInstance;
-typedef PluginInstances<OperatingSystemInstance> OperatingSystemInstances;
-
-static OperatingSystemInstances &GetOperatingSystemInstances() {
-  static OperatingSystemInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(OperatingSystem)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -494,14 +452,7 @@ PluginManager::GetOperatingSystemCreateCallbackForPluginName(ConstString name) {
 }
 
 #pragma mark Language
-
-typedef PluginInstance<LanguageCreateInstance> LanguageInstance;
-typedef PluginInstances<LanguageInstance> LanguageInstances;
-
-static LanguageInstances &GetLanguageInstances() {
-  static LanguageInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(Language)
 
 bool PluginManager::RegisterPlugin(ConstString name, const char *description,
                                    LanguageCreateInstance create_callback) {
@@ -581,14 +532,7 @@ PluginManager::GetLanguageRuntimeGetExceptionPreconditionAtIndex(uint32_t idx) {
 }
 
 #pragma mark SystemRuntime
-
-typedef PluginInstance<SystemRuntimeCreateInstance> SystemRuntimeInstance;
-typedef PluginInstances<SystemRuntimeInstance> SystemRuntimeInstances;
-
-static SystemRuntimeInstances &GetSystemRuntimeInstances() {
-  static SystemRuntimeInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(SystemRuntime)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -743,14 +687,7 @@ PluginManager::GetObjectContainerGetModuleSpecificationsCallbackAtIndex(
 }
 
 #pragma mark Platform
-
-typedef PluginInstance<PlatformCreateInstance> PlatformInstance;
-typedef PluginInstances<PlatformInstance> PlatformInstances;
-
-static PlatformInstances &GetPlatformInstances() {
-  static PlatformInstances g_platform_instances;
-  return g_platform_instances;
-}
+GET_KIND_INSTANCES(Platform)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -791,14 +728,7 @@ void PluginManager::AutoCompletePlatformName(llvm::StringRef name,
 }
 
 #pragma mark Process
-
-typedef PluginInstance<ProcessCreateInstance> ProcessInstance;
-typedef PluginInstances<ProcessInstance> ProcessInstances;
-
-static ProcessInstances &GetProcessInstances() {
-  static ProcessInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(Process)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -945,14 +875,7 @@ PluginManager::GetStructuredDataFilterCallbackAtIndex(
 }
 
 #pragma mark SymbolFile
-
-typedef PluginInstance<SymbolFileCreateInstance> SymbolFileInstance;
-typedef PluginInstances<SymbolFileInstance> SymbolFileInstances;
-
-static SymbolFileInstances &GetSymbolFileInstances() {
-  static SymbolFileInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(SymbolFile)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -972,14 +895,7 @@ PluginManager::GetSymbolFileCreateCallbackAtIndex(uint32_t idx) {
 }
 
 #pragma mark SymbolVendor
-
-typedef PluginInstance<SymbolVendorCreateInstance> SymbolVendorInstance;
-typedef PluginInstances<SymbolVendorInstance> SymbolVendorInstances;
-
-static SymbolVendorInstances &GetSymbolVendorInstances() {
-  static SymbolVendorInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(SymbolVendor)
 
 bool PluginManager::RegisterPlugin(ConstString name, const char *description,
                                    SymbolVendorCreateInstance create_callback) {
@@ -998,14 +914,7 @@ PluginManager::GetSymbolVendorCreateCallbackAtIndex(uint32_t idx) {
 }
 
 #pragma mark UnwindAssembly
-
-typedef PluginInstance<UnwindAssemblyCreateInstance> UnwindAssemblyInstance;
-typedef PluginInstances<UnwindAssemblyInstance> UnwindAssemblyInstances;
-
-static UnwindAssemblyInstances &GetUnwindAssemblyInstances() {
-  static UnwindAssemblyInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(UnwindAssembly)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,
@@ -1025,14 +934,7 @@ PluginManager::GetUnwindAssemblyCreateCallbackAtIndex(uint32_t idx) {
 }
 
 #pragma mark MemoryHistory
-
-typedef PluginInstance<MemoryHistoryCreateInstance> MemoryHistoryInstance;
-typedef PluginInstances<MemoryHistoryInstance> MemoryHistoryInstances;
-
-static MemoryHistoryInstances &GetMemoryHistoryInstances() {
-  static MemoryHistoryInstances g_instances;
-  return g_instances;
-}
+GET_KIND_INSTANCES(MemoryHistory)
 
 bool PluginManager::RegisterPlugin(
     ConstString name, const char *description,

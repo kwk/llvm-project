@@ -171,6 +171,7 @@ public:
       llvm::sys::fs::file_type file_type, llvm::StringRef)>
       DirectoryCallback;
 
+  /// 
   void EnumerateDirectory(llvm::Twine path, bool find_directories,
                           bool find_files, bool find_other,
                           EnumerateDirectoryCallbackType callback,
