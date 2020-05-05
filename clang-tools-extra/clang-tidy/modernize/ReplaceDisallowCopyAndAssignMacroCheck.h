@@ -15,16 +15,37 @@ namespace clang {
 namespace tidy {
 namespace modernize {
 
-/// FIXME: Write a short description.
+/// This check finds macro expansions of ``DISALLOW_COPY_AND_ASSIGN(Type)`` and
+/// replaces them with a deleted copy constructor and a deleted assignment
+/// operator.
+///
+/// Before:
+/// ~~~{.cpp}
+///   class Foo {
+///   private:
+///   }
+/// ~~~
+///
+/// After:
+/// ~~~{.cpp}
+///   class Foo {
+///   private:
+///     Foo(const & Foo) = delete;
+///     Foo & operator=(const & other) = delete;
+///   }
+/// ~~~
 ///
 /// For the user-facing documentation see:
 /// http://clang.llvm.org/extra/clang-tidy/checks/modernize-replace-disallow-copy-and-assign-macro.html
 class ReplaceDisallowCopyAndAssignMacroCheck : public ClangTidyCheck {
 public:
-  ReplaceDisallowCopyAndAssignMacroCheck(StringRef Name, ClangTidyContext *Context)
-      : ClangTidyCheck(Name, Context) {}
-  void registerMatchers(ast_matchers::MatchFinder *Finder) override;
-  void check(const ast_matchers::MatchFinder::MatchResult &Result) override;
+  ReplaceDisallowCopyAndAssignMacroCheck(StringRef Name,
+                                         ClangTidyContext *Context);
+  void registerPPCallbacks(const SourceManager &SM, Preprocessor *PP,
+                           Preprocessor *ModuleExpanderPP) override;
+  void storeOptions(ClangTidyOptions::OptionMap &Opts) override;
+
+  std::string MacroName; 
 };
 
 } // namespace modernize
