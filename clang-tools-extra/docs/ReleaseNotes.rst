@@ -129,6 +129,11 @@ New checks
   Finds includes of system libc headers not provided by the compiler within
   llvm-libc implementations.
 
+- New :doc:`modernize-replace-disallow-copy-and-assign-macro
+  <clang-tidy/checks/modernize-replace-disallow-copy-and-assign-macro>` check.
+
+  FIXME: add release notes.
+
 - New :doc:`objc-dealloc-in-category
   <clang-tidy/checks/objc-dealloc-in-category>` check.
 
