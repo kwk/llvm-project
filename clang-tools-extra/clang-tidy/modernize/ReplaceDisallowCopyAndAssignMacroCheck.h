@@ -23,6 +23,7 @@ namespace modernize {
 /// ~~~{.cpp}
 ///   class Foo {
 ///   private:
+///     DISALLOW_COPY_AND_ASSIGN(Foo);
 ///   }
 /// ~~~
 ///
@@ -30,8 +31,8 @@ namespace modernize {
 /// ~~~{.cpp}
 ///   class Foo {
 ///   private:
-///     Foo(const & Foo) = delete;
-///     Foo & operator=(const & other) = delete;
+///     Foo(const Foo &) = delete;
+///     const Foo &operator=(const Foo &) = delete;
 ///   }
 /// ~~~
 ///
@@ -41,11 +42,13 @@ class ReplaceDisallowCopyAndAssignMacroCheck : public ClangTidyCheck {
 public:
   ReplaceDisallowCopyAndAssignMacroCheck(StringRef Name,
                                          ClangTidyContext *Context);
+  bool isLanguageVersionSupported(const LangOptions &LangOpts) const override {
+    return LangOpts.CPlusPlus;
+  }
   void registerPPCallbacks(const SourceManager &SM, Preprocessor *PP,
                            Preprocessor *ModuleExpanderPP) override;
   void storeOptions(ClangTidyOptions::OptionMap &Opts) override;
-
-  std::string MacroName; 
+  std::string MacroName;
 };
 
 } // namespace modernize

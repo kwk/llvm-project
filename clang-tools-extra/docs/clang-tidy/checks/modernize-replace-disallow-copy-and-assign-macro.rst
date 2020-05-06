@@ -21,8 +21,8 @@ Migration example:
   class Foo {
   private:
   -  DISALLOW_COPY_AND_ASSIGN(Foo);
-  +  Foo(const & Foo) = delete;
-  +  Foo & operator=(const & other) = delete;
+  +  Foo(const Foo &) = delete;
+  +  const Foo &operator=(const Foo &) = delete;
   }
 
 Known Limitations

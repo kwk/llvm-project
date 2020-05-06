@@ -253,7 +253,8 @@ class CharSourceRange {
 
 public:
   CharSourceRange() = default;
-  CharSourceRange(SourceRange R, bool ITR) : Range(R), IsTokenRange(ITR) {}
+  CharSourceRange(SourceRange R, bool IsTokenRange)
+      : Range(R), IsTokenRange(IsTokenRange) {}
 
   static CharSourceRange getTokenRange(SourceRange R) {
     return CharSourceRange(R, true);
