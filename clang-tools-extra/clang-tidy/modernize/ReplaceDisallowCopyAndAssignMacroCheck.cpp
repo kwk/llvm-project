@@ -21,51 +21,29 @@ class ReplaceDisallowCopyAndAssignMacroCallbacks : public PPCallbacks {
 public:
   explicit ReplaceDisallowCopyAndAssignMacroCallbacks(
       ClangTidyCheck &Check, Preprocessor &PP, const SourceManager &SM,
-      const std::string &MacroName)
-      : Check(Check), PP(PP), SM(SM), MacroName(MacroName)
-  {}
+      const std::string &MacroName, const bool FinalizeWithSemicolon)
+      : Check(Check), PP(PP), SM(SM), MacroName(MacroName),
+        FinalizeWithSemicolon(FinalizeWithSemicolon) {}
 
-  /// Hook called whenever a macro definition is seen.
-  void MacroDefined(const Token &MacroNameTok,
-                    const MacroDirective *MD) override {
-    auto identifierInfo = MacroNameTok.getIdentifierInfo();
-    if (!identifierInfo)
-      return;
-
-    auto name = identifierInfo->getNameStart();
-
-    if (std::strncmp(MacroName.c_str(), name, MacroName.length()) != 0)
-      return;
-
-    auto removeRange = MacroNameTok.getLocation();
-    Check.diag(MacroNameTok.getLocation(), "remove '%0' macro")
-        << MacroName << FixItHint::CreateRemoval(removeRange);
-  }
-
-  /// Called by Preprocessor::HandleMacroExpandedIdentifier when a
-  /// macro invocation is found.
   void MacroExpands(const Token &MacroNameTok, const MacroDefinition &MD,
                     SourceRange Range, const MacroArgs *Args) override {
     auto identifierInfo = MacroNameTok.getIdentifierInfo();
     if (!identifierInfo)
       return;
+    if (Args->getNumMacroArguments() != 1)
+      return;
     auto name = identifierInfo->getNameStart();
     if (std::strncmp(MacroName.c_str(), name, MacroName.length()) != 0)
       return;
-    if (Args->getNumMacroArguments() != 1)
-      return;
-    // The first argument to the DISALLOW_COPY_AND_ASSIGN macro is usually a
-    // class name.
+    // The first argument to the DISALLOW_COPY_AND_ASSIGN macro is exptected to
+    // be the class name.
     auto classNameTok = Args->getUnexpArgument(0);
-    auto cls = std::string(classNameTok->getIdentifierInfo()->getNameStart());
+    auto c = std::string(classNameTok->getIdentifierInfo()->getNameStart());
     auto expansionRange = PP.getSourceManager().getExpansionRange(Range);
-    // fprintf(stderr, "expansion range begin: %s %s\n",
-    // expansionRange.getBegin().printToString(PP.getSourceManager()).c_str(),
-    // cls.c_str());
-    std::string Replacement =
-        (llvm::Twine("") + "" + cls + "(const " + cls + " &) = delete;const " +
-         cls + " &operator=(const " + cls + " &) = delete;")
-            .str();
+    std::string Replacement = c + "(const " + c + " &) = delete;";
+    Replacement += "const " + c + " &operator=(const " + c + " &) = delete";
+    if (FinalizeWithSemicolon)
+      Replacement += ";";
     Check.diag(MacroNameTok.getLocation(), "using copy and assign macro '%0'")
         << MacroName
         << FixItHint::CreateReplacement(expansionRange, Replacement);
@@ -74,25 +52,29 @@ public:
   ClangTidyCheck &Check;
   Preprocessor &PP;
   const SourceManager &SM;
+
   const std::string MacroName;
+  const bool FinalizeWithSemicolon;
 };
 } // namespace
 
 ReplaceDisallowCopyAndAssignMacroCheck::ReplaceDisallowCopyAndAssignMacroCheck(
     StringRef Name, ClangTidyContext *Context)
     : ClangTidyCheck(Name, Context),
-      MacroName(Options.get("MacroName", "DISALLOW_COPY_AND_ASSIGN")) {}
+      MacroName(Options.get("MacroName", "DISALLOW_COPY_AND_ASSIGN")),
+      FinalizeWithSemicolon(Options.get("FinalizeWithSemicolon", false)) {}
 
 void ReplaceDisallowCopyAndAssignMacroCheck::registerPPCallbacks(
     const SourceManager &SM, Preprocessor *PP, Preprocessor *ModuleExpanderPP) {
   PP->addPPCallbacks(
       ::std::make_unique<ReplaceDisallowCopyAndAssignMacroCallbacks>(
-          *this, *ModuleExpanderPP, SM, MacroName));
+          *this, *ModuleExpanderPP, SM, MacroName, FinalizeWithSemicolon));
 }
 
 void ReplaceDisallowCopyAndAssignMacroCheck::storeOptions(
     ClangTidyOptions::OptionMap &Opts) {
   Options.store(Opts, "MacroName", MacroName);
+  Options.store(Opts, "FinalizeWithSemicolon", FinalizeWithSemicolon);
 }
 
 } // namespace modernize

@@ -1,14 +1,12 @@
 // RUN: %check_clang_tidy %s modernize-replace-disallow-copy-and-assign-macro %t
 
-// FIXME: Add something that triggers the check here.
-void f();
-// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: function 'f' is insufficiently awesome [modernize-replace-disallow-copy-and-assign-macro]
+#define DISALLOW_COPY_AND_ASSIGN(TypeName)                                     \
+  TypeName(const TypeName &) = delete;                                         \
+  const TypeName &operator=(const TypeName &) = delete
 
-// FIXME: Verify the applied fix.
-//   * Make the CHECK patterns specific enough and try to make verified lines
-//     unique to avoid incorrect matches.
-//   * Use {{}} for regular expressions.
-// CHECK-FIXES: {{^}}void awesome_f();{{$}}
-
-// FIXME: Add something that doesn't trigger the check here.
-void awesome_f2();
+class Foo {
+private:
+  DISALLOW_COPY_AND_ASSIGN(Foo);
+};
+// CHECK-MESSAGES: :9:3: warning: using copy and assign macro 'DISALLOW_COPY_AND_ASSIGN' [modernize-replace-disallow-copy-and-assign-macro]
+// CHECK-FIXES: {{^}}  Foo(const Foo &) = delete;const Foo &operator=(const Foo &) = delete;{{$}}

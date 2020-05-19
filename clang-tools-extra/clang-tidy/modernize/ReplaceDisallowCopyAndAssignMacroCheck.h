@@ -24,7 +24,7 @@ namespace modernize {
 ///   class Foo {
 ///   private:
 ///     DISALLOW_COPY_AND_ASSIGN(Foo);
-///   }
+///   };
 /// ~~~
 ///
 /// After:
@@ -33,7 +33,7 @@ namespace modernize {
 ///   private:
 ///     Foo(const Foo &) = delete;
 ///     const Foo &operator=(const Foo &) = delete;
-///   }
+///   };
 /// ~~~
 ///
 /// For the user-facing documentation see:
@@ -48,7 +48,9 @@ public:
   void registerPPCallbacks(const SourceManager &SM, Preprocessor *PP,
                            Preprocessor *ModuleExpanderPP) override;
   void storeOptions(ClangTidyOptions::OptionMap &Opts) override;
+
   std::string MacroName;
+  bool FinalizeWithSemicolon;
 };
 
 } // namespace modernize

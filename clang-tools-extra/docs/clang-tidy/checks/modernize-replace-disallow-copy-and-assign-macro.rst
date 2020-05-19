@@ -23,7 +23,7 @@ Migration example:
   -  DISALLOW_COPY_AND_ASSIGN(Foo);
   +  Foo(const Foo &) = delete;
   +  const Foo &operator=(const Foo &) = delete;
-  }
+  };
 
 Known Limitations
 -----------------
@@ -37,6 +37,11 @@ Options
 
    A string specifying the macro name whose expansion will be replaced.
    Default is `DISALLOW_COPY_AND_ASSIGN`.
+
+.. option:: FinalizeWithSemicolon
+
+   A boolean value that tells the replacement to put a semicolon at the end or
+   not. Default is ``false``.
 
 See: https://en.cppreference.com/w/cpp/language/function#Deleted_functions
 
