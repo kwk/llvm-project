@@ -712,12 +712,7 @@ bool SearchFilterByModuleListAndCU::AddressPasses(Address &address) {
     if (m_cu_spec_list.GetSize() != 0)
       return false; // Has no comp_unit so can't pass the file check.
   }
-  FileSpec cu_spec;
-  if (sym_ctx.comp_unit)
-    cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
-  if (m_cu_spec_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
-    return false; // Fails the file check
-  return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp); 
+  return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
 }
 
 bool SearchFilterByModuleListAndCU::CompUnitPasses(FileSpec &fileSpec) {
@@ -811,7 +806,7 @@ void SearchFilterByModuleListAndCU::GetDescription(Stream *s) {
 }
 
 uint32_t SearchFilterByModuleListAndCU::GetFilterRequiredItems() {
-  return eSymbolContextModule | eSymbolContextCompUnit;
+  return eSymbolContextModule | eSymbolContextCompUnit | eSymbolContextFunction;
 }
 
 void SearchFilterByModuleListAndCU::Dump(Stream *s) const {}
