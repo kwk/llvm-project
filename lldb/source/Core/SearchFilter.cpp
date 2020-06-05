@@ -705,13 +705,33 @@ SearchFilterByModuleListAndCU::SerializeToStructuredData() {
   return WrapOptionsDict(options_dict_sp);
 }
 
+bool SearchFilterByModuleListAndCU::FunctionPasses(Function &function) {
+  if (Type *type = function.GetType()) {
+    Declaration &decl = const_cast<Declaration &>(type->GetDeclaration());
+    FileSpec &source_file = decl.GetFile();
+
+    return m_cu_spec_list.FindFileIndex(0, source_file, false) != UINT32_MAX;
+  }
+
+  return SearchFilterByModuleList::FunctionPasses(function);
+}
+
 bool SearchFilterByModuleListAndCU::AddressPasses(Address &address) {
   SymbolContext sym_ctx;
   address.CalculateSymbolContext(&sym_ctx, eSymbolContextEverything);
-  if (!sym_ctx.comp_unit) {
-    if (m_cu_spec_list.GetSize() != 0)
-      return false; // Has no comp_unit so can't pass the file check.
-  }
+  // FIXME: I'm not sure if the following still makes sense? It won't work with
+  // my patch when we return false at the given point.
+
+  // if (!sym_ctx.comp_unit) {
+  //   if (m_cu_spec_list.GetSize() != 0)
+  //     return false; // Has no comp_unit so can't pass the file check.
+  // }
+  // FileSpec cu_spec;
+  // if (sym_ctx.comp_unit) {
+  //   cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
+  //   if (m_cu_spec_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
+  //     return false; // Fails the file check
+  // }
   return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
 }
 

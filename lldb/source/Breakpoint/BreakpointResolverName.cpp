@@ -306,21 +306,21 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
       bool remove_it = false;
       SymbolContext sc;
       func_list.GetContextAtIndex(idx, sc);
+
+      // FIXME: currently, the only SearchFilter that requires
+      // eSymbolContextCompUnit also requires eSymbolContextFunction. That
+      // search filter is SearchFilterByModuleListAndCU. Therefore, the
+      // following check can never be true. Remove it? I've noticed that tests
+      // pass even when commented out.
+
       if (filter_by_cu && !filter_by_function) {
         if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
           remove_it = true;
       }
 
-      if (filter_by_cu && filter_by_function) {
-        // Keep this symbol context if it is a function call to a function
-        // whose declaration is located in a file that passes. This is needed
-        // for inlined functions (e.g. when LTO is enabled) and templates.
-        if (Type *type = sc.function->GetType()) {
-          Declaration &decl = const_cast<Declaration &>(type->GetDeclaration());
-          FileSpec &source_file = decl.GetFile();
-          if (!filter.CompUnitPasses(source_file))
-            remove_it = true;
-        }
+      if (filter_by_function && sc.function &&
+          !filter.FunctionPasses(*sc.function)) {
+        remove_it = true;
       }
 
       if (filter_by_language) {

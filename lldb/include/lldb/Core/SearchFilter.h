@@ -412,6 +412,8 @@ public:
 
   ~SearchFilterByModuleListAndCU() override;
 
+  bool FunctionPasses(Function &function) override;
+
   bool AddressPasses(Address &address) override;
 
   bool CompUnitPasses(FileSpec &fileSpec) override;
