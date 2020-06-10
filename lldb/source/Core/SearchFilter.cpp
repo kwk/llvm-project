@@ -723,19 +723,19 @@ bool SearchFilterByModulesAndSupportFiles::AddressPasses(Address &address) {
   SymbolContext sym_ctx;
   address.CalculateSymbolContext(&sym_ctx, eSymbolContextEverything);
 
-  // if (m_target_sp &&
-  //     m_target_sp->GetInlineStrategy() == eInlineBreakpointsHeaders) {
-  //   if (!sym_ctx.comp_unit) {
-  //     if (m_support_file_list.GetSize() != 0)
-  //       return false; // Has no comp_unit so can't pass the file check.
-  //   }
-  //   FileSpec cu_spec;
-  //   if (sym_ctx.comp_unit) {
-  //     cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
-  //     if (m_support_file_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
-  //       return false; // Fails the file check
-  //   }
-  // }
+  if (m_target_sp &&
+      m_target_sp->GetInlineStrategy() == eInlineBreakpointsHeaders) {
+    if (!sym_ctx.comp_unit) {
+      if (m_support_file_list.GetSize() != 0)
+        return false; // Has no comp_unit so can't pass the file check.
+    }
+    FileSpec cu_spec;
+    if (sym_ctx.comp_unit) {
+      cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
+      if (m_support_file_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
+        return false; // Fails the file check
+    }
+  }
   return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
 }
 
