@@ -316,6 +316,8 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
       if (filter_by_function) {
         if (!sc.function || !filter.FunctionPasses(*sc.function))
           remove_it = true;
+        else
+          remove_it = false;
       }
 
       if (filter_by_language) {

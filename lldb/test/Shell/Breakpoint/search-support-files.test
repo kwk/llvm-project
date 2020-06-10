@@ -9,7 +9,7 @@
 # RUN: %lldb -b -s %s %t.out | FileCheck --color --dump-input=always %s 
 
 # Late down below we change the inline breakpoint strategy and this is just to
-# ensure we're using the default strategy.
+# ensure we're using the default strategy ("always").
 settings show target.inline-breakpoint-strategy 
 # CHECK: target.inline-breakpoint-strategy (enum) = always
 
@@ -50,4 +50,29 @@ breakpoint set -n function_in_header -f file-not-existing.h
 # CHECK-NEXT: Breakpoint 5: no locations (pending).
 # CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
 
+breakpoint set -n func -f search-support-files.cpp
+# CHECK: breakpoint set -n func -f search-support-files.cpp
+# CHECK-NEXT: Breakpoint 6: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+breakpoint set -n func -f search-support-files-func.cpp
+# CHECK: breakpoint set -n func -f search-support-files-func.cpp
+# CHECK-NEXT: Breakpoint 7: where = {{.*}}.out`func(){{.*}} at search-support-files-func.cpp
+
+# Now, limit search to compilation units only.
+settings set target.inline-breakpoint-strategy headers
+
+breakpoint set -n function_in_header -f search-support-files.cpp
+# CHECK: breakpoint set -n function_in_header -f search-support-files.cpp 
+# CHECK-NEXT: Breakpoint 8: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+breakpoint set -n func -f search-support-files.cpp
+# CHECK: breakpoint set -n func -f search-support-files.cpp
+# CHECK-NEXT: Breakpoint 9: no locations (pending).
+# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+breakpoint set -n function_in_header -f search-support-files.h
+# CHECK: breakpoint set -n function_in_header -f search-support-files.h 
+# CHECK-NEXT: Breakpoint 10: where = {{.*}}.out`function_in_header(){{.*}} at search-support-files.h
 
