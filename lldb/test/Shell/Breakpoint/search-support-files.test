@@ -48,12 +48,10 @@ breakpoint set -n function_in_header -f search-support-files.h
 breakpoint set -n function_in_header -f file-not-existing.h
 # CHECK: (lldb) breakpoint set -n function_in_header -f file-not-existing.h
 # CHECK-NEXT: Breakpoint 5: no locations (pending).
-# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
 
 breakpoint set -n func -f search-support-files.cpp
 # CHECK: breakpoint set -n func -f search-support-files.cpp
 # CHECK-NEXT: Breakpoint 6: no locations (pending).
-# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
 
 breakpoint set -n func -f search-support-files-func.cpp
 # CHECK: breakpoint set -n func -f search-support-files-func.cpp
@@ -65,12 +63,10 @@ settings set target.inline-breakpoint-strategy headers
 breakpoint set -n function_in_header -f search-support-files.cpp
 # CHECK: breakpoint set -n function_in_header -f search-support-files.cpp 
 # CHECK-NEXT: Breakpoint 8: no locations (pending).
-# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
 
 breakpoint set -n func -f search-support-files.cpp
 # CHECK: breakpoint set -n func -f search-support-files.cpp
 # CHECK-NEXT: Breakpoint 9: no locations (pending).
-# CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
 
 breakpoint set -n function_in_header -f search-support-files.h
 # CHECK: breakpoint set -n function_in_header -f search-support-files.h 
