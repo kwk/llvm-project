@@ -71,4 +71,3 @@ breakpoint set -n func -f search-support-files.cpp
 breakpoint set -n function_in_header -f search-support-files.h
 # CHECK: breakpoint set -n function_in_header -f search-support-files.h 
 # CHECK-NEXT: Breakpoint 10: where = {{.*}}.out`function_in_header(){{.*}} at search-support-files.h
-
