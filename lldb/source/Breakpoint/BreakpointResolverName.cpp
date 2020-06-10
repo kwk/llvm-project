@@ -263,7 +263,7 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
   bool filter_by_function =
       (filter.GetFilterRequiredItems() & eSymbolContextFunction) != 0;
   bool filter_by_language = (m_language != eLanguageTypeUnknown);
-  const bool include_symbols = !filter_by_cu;
+  const bool include_symbols = !(filter_by_cu || filter_by_function);
   const bool include_inlines = true;
 
   switch (m_match_type) {
@@ -287,7 +287,8 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
     if (context.module_sp) {
       context.module_sp->FindFunctions(
           m_regex,
-          !filter_by_cu, // include symbols only if we aren't filtering by CU
+          !(filter_by_cu || filter_by_function), // include symbols only if we
+                                                 // aren't filtering by CU
           include_inlines, func_list);
     }
     break;
@@ -299,7 +300,7 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
 
   // If the filter specifies a Compilation Unit, remove the ones that don't
   // pass at this point.
-  if (filter_by_cu || filter_by_language) {
+  if (filter_by_cu || filter_by_language || filter_by_function) {
     uint32_t num_functions = func_list.GetSize();
 
     for (size_t idx = 0; idx < num_functions; idx++) {
@@ -307,10 +308,10 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
       SymbolContext sc;
       func_list.GetContextAtIndex(idx, sc);
 
-      // if (filter_by_cu) {
-      //   if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
-      //     remove_it = true;
-      // }
+      if (filter_by_cu) {
+        if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
+          remove_it = true;
+      }
 
       if (filter_by_function) {
         if (!sc.function || !filter.FunctionPasses(*sc.function))

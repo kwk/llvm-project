@@ -835,7 +835,7 @@ uint32_t SearchFilterByModulesAndSupportFiles::GetFilterRequiredItems() {
   if (m_target_sp &&
       m_target_sp->GetInlineStrategy() == eInlineBreakpointsHeaders)
     return flags | eSymbolContextCompUnit;
-  return flags | eSymbolContextCompUnit;
+  return flags;
 }
 
 void SearchFilterByModulesAndSupportFiles::Dump(Stream *s) const {}
