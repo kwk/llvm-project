@@ -121,7 +121,7 @@ SearchFilterSP SearchFilter::CreateFromStructuredData(
         target_sp, *subclass_options, error);
     break;
   case ByModulesAndCU:
-    result_sp = SearchFilterByModuleListAndCU::CreateFromStructuredData(
+    result_sp = SearchFilterByModulesAndSupportFiles::CreateFromStructuredData(
         target_sp, *subclass_options, error);
     break;
   case Exception:
@@ -637,22 +637,23 @@ StructuredData::ObjectSP SearchFilterByModuleList::SerializeToStructuredData() {
   return WrapOptionsDict(options_dict_sp);
 }
 
-//  SearchFilterByModuleListAndCU:
+//  SearchFilterByModulesAndSupportFiles:
 //  Selects a shared library matching a given file spec
 
-SearchFilterByModuleListAndCU::SearchFilterByModuleListAndCU(
+SearchFilterByModulesAndSupportFiles::SearchFilterByModulesAndSupportFiles(
     const lldb::TargetSP &target_sp, const FileSpecList &module_list,
-    const FileSpecList &cu_list)
+    const FileSpecList &support_file_list)
     : SearchFilterByModuleList(target_sp, module_list,
                                FilterTy::ByModulesAndCU),
-      m_cu_spec_list(cu_list) {}
+      m_support_file_list(support_file_list) {}
 
-SearchFilterByModuleListAndCU::~SearchFilterByModuleListAndCU() = default;
+SearchFilterByModulesAndSupportFiles::~SearchFilterByModulesAndSupportFiles() =
+    default;
 
-lldb::SearchFilterSP SearchFilterByModuleListAndCU::CreateFromStructuredData(
-    const lldb::TargetSP& target_sp,
-    const StructuredData::Dictionary &data_dict,
-    Status &error) {
+lldb::SearchFilterSP
+SearchFilterByModulesAndSupportFiles::CreateFromStructuredData(
+    const lldb::TargetSP &target_sp,
+    const StructuredData::Dictionary &data_dict, Status &error) {
   StructuredData::Array *modules_array = nullptr;
   SearchFilterSP result_sp;
   bool success = data_dict.GetValueForKeyAsArray(GetKey(OptionNames::ModList),
@@ -693,55 +694,59 @@ lldb::SearchFilterSP SearchFilterByModuleListAndCU::CreateFromStructuredData(
     cus.EmplaceBack(cu);
   }
 
-  return std::make_shared<SearchFilterByModuleListAndCU>(
-      target_sp, modules, cus);
+  return std::make_shared<SearchFilterByModulesAndSupportFiles>(target_sp,
+                                                                modules, cus);
 }
 
 StructuredData::ObjectSP
-SearchFilterByModuleListAndCU::SerializeToStructuredData() {
+SearchFilterByModulesAndSupportFiles::SerializeToStructuredData() {
   auto options_dict_sp = std::make_shared<StructuredData::Dictionary>();
   SearchFilterByModuleList::SerializeUnwrapped(options_dict_sp);
-  SerializeFileSpecList(options_dict_sp, OptionNames::CUList, m_cu_spec_list);
+  SerializeFileSpecList(options_dict_sp, OptionNames::CUList,
+                        m_support_file_list);
   return WrapOptionsDict(options_dict_sp);
 }
 
-bool SearchFilterByModuleListAndCU::FunctionPasses(Function &function) {
-  if (Type *type = function.GetType()) {
-    Declaration &decl = const_cast<Declaration &>(type->GetDeclaration());
-    FileSpec &source_file = decl.GetFile();
+bool SearchFilterByModulesAndSupportFiles::FunctionPasses(Function &function) {
+  Type *type = function.GetType();
+  if (!type)
+    return SearchFilterByModuleList::FunctionPasses(function);
+    //return false;
 
-    return m_cu_spec_list.FindFileIndex(0, source_file, false) != UINT32_MAX;
-  }
+  Declaration &decl = const_cast<Declaration &>(type->GetDeclaration());
+  FileSpec &source_file = decl.GetFile();
 
-  return SearchFilterByModuleList::FunctionPasses(function);
+  return m_support_file_list.FindFileIndex(0, source_file, false) != UINT32_MAX;
 }
 
-bool SearchFilterByModuleListAndCU::AddressPasses(Address &address) {
+bool SearchFilterByModulesAndSupportFiles::AddressPasses(Address &address) {
   SymbolContext sym_ctx;
   address.CalculateSymbolContext(&sym_ctx, eSymbolContextEverything);
-  // FIXME: I'm not sure if the following still makes sense? It won't work with
-  // my patch when we return false at the given point.
 
-  // if (!sym_ctx.comp_unit) {
-  //   if (m_cu_spec_list.GetSize() != 0)
-  //     return false; // Has no comp_unit so can't pass the file check.
-  // }
-  // FileSpec cu_spec;
-  // if (sym_ctx.comp_unit) {
-  //   cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
-  //   if (m_cu_spec_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
-  //     return false; // Fails the file check
+  // if (m_target_sp &&
+  //     m_target_sp->GetInlineStrategy() == eInlineBreakpointsHeaders) {
+  //   if (!sym_ctx.comp_unit) {
+  //     if (m_support_file_list.GetSize() != 0)
+  //       return false; // Has no comp_unit so can't pass the file check.
+  //   }
+  //   FileSpec cu_spec;
+  //   if (sym_ctx.comp_unit) {
+  //     cu_spec = sym_ctx.comp_unit->GetPrimaryFile();
+  //     if (m_support_file_list.FindFileIndex(0, cu_spec, false) == UINT32_MAX)
+  //       return false; // Fails the file check
+  //   }
   // }
   return SearchFilterByModuleList::ModulePasses(sym_ctx.module_sp);
 }
 
-bool SearchFilterByModuleListAndCU::CompUnitPasses(FileSpec &fileSpec) {
-  return m_cu_spec_list.FindFileIndex(0, fileSpec, false) != UINT32_MAX;
+bool SearchFilterByModulesAndSupportFiles::CompUnitPasses(FileSpec &fileSpec) {
+  return m_support_file_list.FindFileIndex(0, fileSpec, false) != UINT32_MAX;
 }
 
-bool SearchFilterByModuleListAndCU::CompUnitPasses(CompileUnit &compUnit) {
-  bool in_cu_list = m_cu_spec_list.FindFileIndex(0, compUnit.GetPrimaryFile(),
-                                                 false) != UINT32_MAX;
+bool SearchFilterByModulesAndSupportFiles::CompUnitPasses(
+    CompileUnit &compUnit) {
+  bool in_cu_list = m_support_file_list.FindFileIndex(
+                        0, compUnit.GetPrimaryFile(), false) != UINT32_MAX;
   if (!in_cu_list)
     return false;
 
@@ -752,7 +757,7 @@ bool SearchFilterByModuleListAndCU::CompUnitPasses(CompileUnit &compUnit) {
   return SearchFilterByModuleList::ModulePasses(module_sp);
 }
 
-void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
+void SearchFilterByModulesAndSupportFiles::Search(Searcher &searcher) {
   if (!m_target_sp)
     return;
 
@@ -795,7 +800,7 @@ void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
       matchingContext.comp_unit = cu_sp.get();
       if (!matchingContext.comp_unit)
         continue;
-      if (m_cu_spec_list.FindFileIndex(
+      if (m_support_file_list.FindFileIndex(
               0, matchingContext.comp_unit->GetPrimaryFile(), false) ==
           UINT32_MAX)
         continue;
@@ -806,7 +811,7 @@ void SearchFilterByModuleListAndCU::Search(Searcher &searcher) {
   }
 }
 
-void SearchFilterByModuleListAndCU::GetDescription(Stream *s) {
+void SearchFilterByModulesAndSupportFiles::GetDescription(Stream *s) {
   size_t num_modules = m_module_spec_list.GetSize();
   if (num_modules == 1) {
     s->Printf(", module = ");
@@ -825,12 +830,16 @@ void SearchFilterByModuleListAndCU::GetDescription(Stream *s) {
   }
 }
 
-uint32_t SearchFilterByModuleListAndCU::GetFilterRequiredItems() {
-  return eSymbolContextModule | eSymbolContextCompUnit | eSymbolContextFunction;
+uint32_t SearchFilterByModulesAndSupportFiles::GetFilterRequiredItems() {
+  uint32_t flags = eSymbolContextModule | eSymbolContextFunction;
+  if (m_target_sp &&
+      m_target_sp->GetInlineStrategy() == eInlineBreakpointsHeaders)
+    return flags | eSymbolContextCompUnit;
+  return flags | eSymbolContextCompUnit;
 }
 
-void SearchFilterByModuleListAndCU::Dump(Stream *s) const {}
+void SearchFilterByModulesAndSupportFiles::Dump(Stream *s) const {}
 
-SearchFilterSP SearchFilterByModuleListAndCU::DoCreateCopy() {
-  return std::make_shared<SearchFilterByModuleListAndCU>(*this);
+SearchFilterSP SearchFilterByModulesAndSupportFiles::DoCreateCopy() {
+  return std::make_shared<SearchFilterByModulesAndSupportFiles>(*this);
 }

@@ -402,16 +402,22 @@ protected:
   FileSpecList m_module_spec_list;
 };
 
-class SearchFilterByModuleListAndCU : public SearchFilterByModuleList {
+class SearchFilterByModulesAndSupportFiles : public SearchFilterByModuleList {
 public:
   /// The basic constructor takes a Target, which gives the space to search,
   /// and the module list to restrict the search to.
-  SearchFilterByModuleListAndCU(const lldb::TargetSP &targetSP,
-                                const FileSpecList &module_list,
-                                const FileSpecList &cu_list);
+  SearchFilterByModulesAndSupportFiles(const lldb::TargetSP &targetSP,
+                                       const FileSpecList &module_list,
+                                       const FileSpecList &support_file_list);
 
-  ~SearchFilterByModuleListAndCU() override;
+  ~SearchFilterByModulesAndSupportFiles() override;
 
+  /// \returns \c true if the file in which \p function was declared is part of
+  /// the file list given for this filter; otherwise we fall back to
+  ///
+  /// \code{.cpp}
+  /// SearchFilterByModuleList::FunctionPasses(function)
+  /// \endcode
   bool FunctionPasses(Function &function) override;
 
   bool AddressPasses(Address &address) override;
@@ -429,7 +435,7 @@ public:
   void Search(Searcher &searcher) override;
 
   static lldb::SearchFilterSP
-  CreateFromStructuredData(const lldb::TargetSP& target_sp,
+  CreateFromStructuredData(const lldb::TargetSP &target_sp,
                            const StructuredData::Dictionary &data_dict,
                            Status &error);
 
@@ -439,7 +445,7 @@ protected:
   lldb::SearchFilterSP DoCreateCopy() override;
 
 private:
-  FileSpecList m_cu_spec_list;
+  FileSpecList m_support_file_list;
 };
 
 } // namespace lldb_private

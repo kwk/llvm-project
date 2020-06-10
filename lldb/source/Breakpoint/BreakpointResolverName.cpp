@@ -307,20 +307,14 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
       SymbolContext sc;
       func_list.GetContextAtIndex(idx, sc);
 
-      // FIXME: currently, the only SearchFilter that requires
-      // eSymbolContextCompUnit also requires eSymbolContextFunction. That
-      // search filter is SearchFilterByModuleListAndCU. Therefore, the
-      // following check can never be true. Remove it? I've noticed that tests
-      // pass even when commented out.
+      // if (filter_by_cu) {
+      //   if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
+      //     remove_it = true;
+      // }
 
-      if (filter_by_cu && !filter_by_function) {
-        if (!sc.comp_unit || !filter.CompUnitPasses(*sc.comp_unit))
+      if (filter_by_function) {
+        if (!sc.function || !filter.FunctionPasses(*sc.function))
           remove_it = true;
-      }
-
-      if (filter_by_function && sc.function &&
-          !filter.FunctionPasses(*sc.function)) {
-        remove_it = true;
       }
 
       if (filter_by_language) {

@@ -309,7 +309,7 @@ BreakpointSP Target::CreateSourceRegexBreakpoint(
     const std::unordered_set<std::string> &function_names,
     RegularExpression source_regex, bool internal, bool hardware,
     LazyBool move_to_nearest_code) {
-  SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
+  SearchFilterSP filter_sp(GetSearchFilterForModulesAndSupportFiles(
       containingModules, source_file_spec_list));
   if (move_to_nearest_code == eLazyBoolCalculate)
     move_to_nearest_code = GetMoveToNearestCode() ? eLazyBoolYes : eLazyBoolNo;
@@ -355,8 +355,8 @@ BreakpointSP Target::CreateBreakpoint(const FileSpecList *containingModules,
     // Not checking for inlines, we are looking only for matching compile units
     FileSpecList compile_unit_list;
     compile_unit_list.Append(remapped_file);
-    filter_sp = GetSearchFilterForModuleAndCUList(containingModules,
-                                                  &compile_unit_list);
+    filter_sp = GetSearchFilterForModulesAndSupportFiles(containingModules,
+                                                         &compile_unit_list);
   } else {
     filter_sp = GetSearchFilterForModuleList(containingModules);
   }
@@ -419,7 +419,7 @@ BreakpointSP Target::CreateBreakpoint(
     lldb::addr_t offset, LazyBool skip_prologue, bool internal, bool hardware) {
   BreakpointSP bp_sp;
   if (func_name) {
-    SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
+    SearchFilterSP filter_sp(GetSearchFilterForModulesAndSupportFiles(
         containingModules, containingSourceFiles));
 
     if (skip_prologue == eLazyBoolCalculate)
@@ -445,7 +445,7 @@ Target::CreateBreakpoint(const FileSpecList *containingModules,
   BreakpointSP bp_sp;
   size_t num_names = func_names.size();
   if (num_names > 0) {
-    SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
+    SearchFilterSP filter_sp(GetSearchFilterForModulesAndSupportFiles(
         containingModules, containingSourceFiles));
 
     if (skip_prologue == eLazyBoolCalculate)
@@ -470,7 +470,7 @@ Target::CreateBreakpoint(const FileSpecList *containingModules,
                          LazyBool skip_prologue, bool internal, bool hardware) {
   BreakpointSP bp_sp;
   if (num_names > 0) {
-    SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
+    SearchFilterSP filter_sp(GetSearchFilterForModulesAndSupportFiles(
         containingModules, containingSourceFiles));
 
     if (skip_prologue == eLazyBoolCalculate) {
@@ -527,7 +527,7 @@ Target::GetSearchFilterForModuleList(const FileSpecList *containingModules) {
   return filter_sp;
 }
 
-SearchFilterSP Target::GetSearchFilterForModuleAndCUList(
+SearchFilterSP Target::GetSearchFilterForModulesAndSupportFiles(
     const FileSpecList *containingModules,
     const FileSpecList *containingSourceFiles) {
   if (containingSourceFiles == nullptr || containingSourceFiles->GetSize() == 0)
@@ -538,10 +538,10 @@ SearchFilterSP Target::GetSearchFilterForModuleAndCUList(
     // We could make a special "CU List only SearchFilter".  Better yet was if
     // these could be composable, but that will take a little reworking.
 
-    filter_sp = std::make_shared<SearchFilterByModuleListAndCU>(
+    filter_sp = std::make_shared<SearchFilterByModulesAndSupportFiles>(
         shared_from_this(), FileSpecList(), *containingSourceFiles);
   } else {
-    filter_sp = std::make_shared<SearchFilterByModuleListAndCU>(
+    filter_sp = std::make_shared<SearchFilterByModulesAndSupportFiles>(
         shared_from_this(), *containingModules, *containingSourceFiles);
   }
   return filter_sp;
@@ -552,7 +552,7 @@ BreakpointSP Target::CreateFuncRegexBreakpoint(
     const FileSpecList *containingSourceFiles, RegularExpression func_regex,
     lldb::LanguageType requested_language, LazyBool skip_prologue,
     bool internal, bool hardware) {
-  SearchFilterSP filter_sp(GetSearchFilterForModuleAndCUList(
+  SearchFilterSP filter_sp(GetSearchFilterForModulesAndSupportFiles(
       containingModules, containingSourceFiles));
   bool skip = (skip_prologue == eLazyBoolCalculate)
                   ? GetSkipPrologue()
@@ -594,11 +594,11 @@ lldb::BreakpointSP Target::CreateScriptedBreakpoint(
   bool has_modules = containingModules && containingModules->GetSize() > 0;
 
   if (has_files && has_modules) {
-    filter_sp = GetSearchFilterForModuleAndCUList(containingModules,
-                                                  containingSourceFiles);
+    filter_sp = GetSearchFilterForModulesAndSupportFiles(containingModules,
+                                                         containingSourceFiles);
   } else if (has_files) {
-    filter_sp =
-        GetSearchFilterForModuleAndCUList(nullptr, containingSourceFiles);
+    filter_sp = GetSearchFilterForModulesAndSupportFiles(nullptr,
+                                                         containingSourceFiles);
   } else if (has_modules) {
     filter_sp = GetSearchFilterForModuleList(containingModules);
   } else {

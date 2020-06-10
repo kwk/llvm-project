@@ -1241,9 +1241,9 @@ public:
   lldb::SearchFilterSP
   GetSearchFilterForModuleList(const FileSpecList *containingModuleList);
 
-  lldb::SearchFilterSP
-  GetSearchFilterForModuleAndCUList(const FileSpecList *containingModules,
-                                    const FileSpecList *containingSourceFiles);
+  lldb::SearchFilterSP GetSearchFilterForModulesAndSupportFiles(
+      const FileSpecList *containingModules,
+      const FileSpecList *containingSourceFiles);
 
   lldb::REPLSP GetREPL(Status &err, lldb::LanguageType language,
                        const char *repl_options, bool can_create);

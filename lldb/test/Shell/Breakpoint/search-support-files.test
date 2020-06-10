@@ -6,7 +6,12 @@
 #            (See https://lldb.llvm.org/use/tutorial.html and look for --method.)
 
 # RUN: %build %p/Inputs/search-support-files.cpp -o %t.out
-# RUN: %lldb -b -s %s %t.out | FileCheck %s 
+# RUN: %lldb -b -s %s %t.out | FileCheck --color --dump-input=always %s 
+
+# Late down below we change the inline breakpoint strategy and this is just to
+# ensure we're using the default strategy.
+settings show target.inline-breakpoint-strategy 
+# CHECK: target.inline-breakpoint-strategy (enum) = always
 
 #    Set breakpoint by function name.
 
@@ -44,3 +49,5 @@ breakpoint set -n function_in_header -f file-not-existing.h
 # CHECK: (lldb) breakpoint set -n function_in_header -f file-not-existing.h
 # CHECK-NEXT: Breakpoint 5: no locations (pending).
 # CHECK-NEXT: WARNING: Unable to resolve breakpoint to any actual locations.
+
+
