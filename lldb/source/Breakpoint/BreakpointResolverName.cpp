@@ -287,8 +287,9 @@ BreakpointResolverName::SearchCallback(SearchFilter &filter,
     if (context.module_sp) {
       context.module_sp->FindFunctions(
           m_regex,
-          !(filter_by_cu || filter_by_function), // include symbols only if we
-                                                 // aren't filtering by CU
+          !(filter_by_cu ||
+            filter_by_function), // include symbols only if we
+                                 // aren't filtering by CU or function
           include_inlines, func_list);
     }
     break;
