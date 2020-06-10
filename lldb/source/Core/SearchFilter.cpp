@@ -711,7 +711,6 @@ bool SearchFilterByModulesAndSupportFiles::FunctionPasses(Function &function) {
   Type *type = function.GetType();
   if (!type)
     return SearchFilterByModuleList::FunctionPasses(function);
-    //return false;
 
   Declaration &decl = const_cast<Declaration &>(type->GetDeclaration());
   FileSpec &source_file = decl.GetFile();
