@@ -1,9 +1,5 @@
 # See www/CMake.html for instructions on how to build libcxxabi with CMake.
 
-if (NOT IS_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../libcxx")
-  message(FATAL_ERROR "libc++abi now requires being built in a monorepo layout with libcxx available")
-endif()
-
 #===============================================================================
 # Setup Project
 #===============================================================================
@@ -45,8 +41,6 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXXABI_STANDALONE_B
   set(LIBCXXABI_STANDALONE_BUILD 1)
   set(LLVM_LIT_OUTPUT_DIR "${LIBCXXABI_BINARY_DIR}/bin")
 
-  # Find the LLVM sources and simulate LLVM CMake options.
-  include(HandleOutOfTreeLLVM)
 endif()
 
 if (LIBCXXABI_STANDALONE_BUILD)
