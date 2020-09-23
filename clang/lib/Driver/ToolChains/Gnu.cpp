@@ -2523,6 +2523,8 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
        TargetTriple.getVendor() == llvm::Triple::Freescale ||
            TargetTriple.getVendor() == llvm::Triple::OpenEmbedded}};
 
+  bool NeedLibgccShared = !Args.hasArg(options::OPT_static_libgcc) &&
+                          !Args.hasArg(options::OPT_static);
   for (auto &Suffix : Suffixes) {
     if (!Suffix.Active)
       continue;
@@ -2540,8 +2542,17 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
           continue; // Saw this path before; no need to look at it again.
       if (CandidateVersion.isOlderThan(4, 1, 1))
         continue;
-      if (CandidateVersion <= Version)
-        continue;
+
+      bool CandidateHasLibGccShared = false;
+      if (CandidateVersion <= Version) {
+        if (NeedLibgccShared && !HasLibGccShared) {
+          CandidateHasLibGccShared =
+                D.getVFS().exists(LI->path() + "/libgcc_s.so");
+
+        }
+        if (HasLibGccShared || !CandidateHasLibGccShared)
+          continue;
+      }
 
       if (!ScanGCCForMultilibs(TargetTriple, Args, LI->path(),
                                NeedsBiarchSuffix))
@@ -2555,6 +2566,7 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
       GCCInstallPath = (LibDir + "/" + LibSuffix + "/" + VersionText).str();
       GCCParentLibPath = (GCCInstallPath + "/../" + Suffix.ReversePath).str();
       IsValid = true;
+      HasLibGccShared = CandidateHasLibGccShared;
     }
   }
 }

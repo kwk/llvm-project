@@ -687,6 +687,18 @@
 // CHECK-FEDORA-31-RISCV64: "{{.*}}/usr/lib/gcc/riscv64-redhat-linux/9{{/|\\\\}}crtend.o"
 // CHECK-FEDORA-31-RISCV64: "{{.*}}/usr/lib/gcc/riscv64-redhat-linux/9{{/|\\\\}}crtn.o"
 //
+// Check that clang does not select the cross compiler by default on Fedora 28.
+//
+// RUN: %clang -no-canonical-prefixes %s -### -o %t.o 2>&1 \
+// RUN:     --target=x86_64-unknown-linux-gnu \
+// RUN:     --gcc-toolchain="" \
+// RUN:     --sysroot=%S/Inputs/fedora_28_tree \
+// RUN:   | FileCheck --check-prefix=CHECK-FEDORA-28-X86_64 %s
+//
+// CHECK-FEDORA-28-X86_64: "{{.*}}ld{{(.exe)?}}" "--sysroot=[[SYSROOT:[^"]+]]"
+// CHECK-FEDORA-28-X86_64: "[[SYSROOT]]/usr/lib/gcc/x86_64-redhat-linux/7/crtbegin.o"
+// CHECK-FEDORA-28-X86_64: "-L[[SYSROOT]]/usr/lib/gcc/x86_64-redhat-linux/7"
+//
 // RUN: %clang -no-canonical-prefixes %s -### -o %t.o 2>&1 \
 // RUN:     --target=arm-unknown-linux-gnueabi -rtlib=platform \
 // RUN:     --gcc-toolchain="" \

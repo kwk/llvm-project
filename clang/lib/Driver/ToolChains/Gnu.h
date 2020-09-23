@@ -190,6 +190,7 @@ public:
   /// Driver, and has logic for fuzzing that where appropriate.
   class GCCInstallationDetector {
     bool IsValid;
+    bool HasLibGccShared;
     llvm::Triple GCCTriple;
     const Driver &D;
 
@@ -216,7 +217,8 @@ public:
     const std::string GentooConfigDir = "/etc/env.d/gcc";
 
   public:
-    explicit GCCInstallationDetector(const Driver &D) : IsValid(false), D(D) {}
+    explicit GCCInstallationDetector(const Driver &D)
+        : IsValid(false), HasLibGccShared(false), D(D) {}
     void init(const llvm::Triple &TargetTriple, const llvm::opt::ArgList &Args,
               ArrayRef<std::string> ExtraTripleAliases = None);
 
