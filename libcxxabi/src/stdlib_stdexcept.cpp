@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <libcxx-internal/refstring.h>
 #include "stdexcept"
 #include "new"
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
 #include <cstddef>
-#include "include/refstring.h" // from libc++
 
 static_assert(sizeof(std::__libcpp_refstring) == sizeof(const char *), "");
 
