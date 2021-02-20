@@ -54,7 +54,7 @@ else:
   else:
     source_parsers = {'.md': CustomCommonMarkParser}
   source_suffix['.md'] = 'markdown'
-  extensions.append('sphinx_markdown_tables')
+  #extensions.append('sphinx_markdown_tables')
 
   # Setup AutoStructify for inline .rst toctrees in index.md
   from recommonmark.transform import AutoStructify
