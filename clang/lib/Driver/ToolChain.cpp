@@ -254,7 +254,7 @@ std::string ToolChain::getInputFilename(const InputInfo &Input) const {
 }
 
 bool ToolChain::IsUnwindTablesDefault(const ArgList &Args) const {
-  return false;
+  return true;
 }
 
 Tool *ToolChain::getClang() const {
