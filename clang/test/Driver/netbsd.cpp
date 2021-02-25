@@ -131,7 +131,7 @@
 // ARM-7: clang{{.*}}" "-cc1" "-triple" "armv5e-unknown-netbsd7.0.0-eabi"
 // ARM-7: ld{{.*}}" "--eh-frame-hdr" "-dynamic-linker" "/libexec/ld.elf_so"
 // ARM-7: "-o" "a.out" "{{.*}}/usr/lib{{/|\\\\}}crt0.o" "{{.*}}/usr/lib{{/|\\\\}}eabi{{/|\\\\}}crti.o"
-// ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtbegin.o" "{{.*}}.o" "-lc++" "-lm" "-lc"
+// ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtbegin.o" "{{.*}}.o" "-lc++" "-lgcc_s" "-lm" "-lc"
 // ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtend.o" "{{.*}}/usr/lib{{/|\\\\}}crtn.o"
 
 // AARCH64: clang{{.*}}" "-cc1" "-triple" "aarch64-unknown-netbsd"
@@ -250,7 +250,7 @@
 // S-ARM-7: clang{{.*}}" "-cc1" "-triple" "armv5e-unknown-netbsd7.0.0-eabi"
 // S-ARM-7: ld{{.*}}" "--eh-frame-hdr" "-Bstatic"
 // S-ARM-7: "-o" "a.out" "{{.*}}/usr/lib{{/|\\\\}}crt0.o" "{{.*}}/usr/lib{{/|\\\\}}eabi{{/|\\\\}}crti.o"
-// S-ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtbegin.o" "{{.*}}.o" "-lc++" "-lm" "-lc"
+// S-ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtbegin.o" "{{.*}}.o" "-lc++" "-lgcc_s" "-lm" "-lc"
 // S-ARM-7: "{{.*}}/usr/lib{{/|\\\\}}crtend.o" "{{.*}}/usr/lib{{/|\\\\}}crtn.o"
 
 // S-AARCH64: clang{{.*}}" "-cc1" "-triple" "aarch64-unknown-netbsd"
