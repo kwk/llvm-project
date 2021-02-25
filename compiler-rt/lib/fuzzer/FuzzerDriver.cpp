@@ -294,7 +294,7 @@ static int RunInMultipleProcesses(const std::vector<std::string> &Args,
   std::thread Pulse(PulseThread);
   Pulse.detach();
   for (unsigned i = 0; i < NumWorkers; i++)
-    V.push_back(std::thread(WorkerThread, std::ref(Cmd), &Counter, NumJobs,
+    V.emplace_back(std::thread(WorkerThread, std::ref(Cmd), &Counter, NumJobs,
                             &HasErrors));
   for (auto &T : V)
     T.join();
