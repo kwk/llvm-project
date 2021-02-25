@@ -16,7 +16,8 @@
 #include "Plugins/Process/Utility/NativeRegisterContextDBReg_arm64.h"
 #include "Plugins/Process/Utility/RegisterInfoPOSIX_arm64.h"
 
-#include <asm/ptrace.h>
+#include <sys/ptrace.h>
+#include <linux/ptrace.h>
 
 namespace lldb_private {
 namespace process_linux {
