@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #===-- tag.sh - Tag the LLVM release candidates ----------------------------===#
 #
 # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -11,12 +11,14 @@
 #
 #===------------------------------------------------------------------------===#
 
-set -e
+set -ex
 
 projects="llvm clang compiler-rt libcxx libcxxabi libclc clang-tools-extra polly lldb lld openmp libunwind flang"
 
 release=""
 rc=""
+snapshot=""
+yyyymmdd=$(date +'%Y%m%d')
 
 usage() {
     echo "Export the Git sources and build tarballs from them"
@@ -25,10 +27,10 @@ usage() {
     echo "  -release <num> The version number of the release"
     echo "  -rc <num>      The release candidate number"
     echo "  -final         The final tag"
+    echo "  -snapshot      Use latest revision and append current date (YYYYMMDD) and short git revision to tarballs and their prefixes (no -rc or -release allowed)"
 }
 
 export_sources() {
-    release_no_dot=`echo $release | sed -e 's,\.,,g'`
     tag="llvmorg-$release"
 
     if [ "$rc" = "final" ]; then
@@ -40,30 +42,53 @@ export_sources() {
     llvm_src_dir=$(readlink -f $(dirname "$(readlink -f "$0")")/../../..)
     [ -d $llvm_src_dir/.git ] || ( echo "No git repository at $llvm_src_dir" ; exit 1 )
 
+    release_git_archive_prefix=$release
+    release_tarball=$release
+
+    if [ "$snapshot" != "" ]; then
+        llvm_version=$(grep -oP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' $llvm_src_dir/llvm/CMakeLists.txt | paste -sd '.')
+        git_short_rev=$(git rev-parse --short HEAD)
+        # For daily snapshots of source tarballs, we want to be able to
+        # determine the URL to the source tarball programmatically only from the
+        # package name and the current date. Yet, the directory packaged in the
+        # tarball should contain the version information of the shared LLVM
+        # source tree as well as the git revision. This might be a surprise but
+        # a package like clang or compiler-rt don't know about the LLVM version
+        # itself. That's why a version encoded in the directory packaged in the
+        # tarball can be extremely helpful!
+        release_git_archive_prefix=$llvm_version-$yyyymmdd-g$git_short_rev
+        release_tarball=$yyyymmdd
+    fi
+
     echo $tag
     target_dir=$(pwd)
 
     echo "Creating tarball for llvm-project ..."
     pushd $llvm_src_dir/
-    git archive --prefix=llvm-project-$release$rc.src/ $tag . | xz >$target_dir/llvm-project-$release$rc.src.tar.xz
+    tree_id=$tag
+    if [ "$snapshot" != "" ]; then
+        tree_id="main"
+    fi
+    git archive --prefix=llvm-project-$release_git_archive_prefix$rc.src/ $tree_id . | xz >$target_dir/llvm-project-$release_tarball$rc.src.tar.xz
     popd
 
-    if [ ! -d test-suite-$release$rc.src ]
-    then
-      echo "Fetching LLVM test-suite source ..."
-      mkdir -p test-suite-$release$rc.src
-      curl -L https://github.com/llvm/test-suite/archive/$tag.tar.gz | \
-          tar -C test-suite-$release$rc.src --strip-components=1 -xzf -
+    if [ "$snapshot" == "" ]; then
+        if [ ! -d test-suite-$release$rc.src ]; then
+            echo "Fetching LLVM test-suite source ..."
+            mkdir -p test-suite-$release$rc.src
+            curl -L https://github.com/llvm/test-suite/archive/$tree_id.tar.gz | \
+                tar -C test-suite-$release$rc.src --strip-components=1 -xzf -
+        fi
+        echo "Creating tarball for test-suite ..."
+        tar --sort=name --owner=0 --group=0 \
+            --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
+            -cJf test-suite-$release$rc.src.tar.xz test-suite-$release$rc.src
     fi
-    echo "Creating tarball for test-suite ..."
-    tar --sort=name --owner=0 --group=0 \
-        --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
-        -cJf test-suite-$release$rc.src.tar.xz test-suite-$release$rc.src
 
     for proj in $projects; do
         echo "Creating tarball for $proj ..."
         pushd $llvm_src_dir/$proj
-        git archive --prefix=$proj-$release$rc.src/ $tag . | xz >$target_dir/$proj-$release$rc.src.tar.xz
+        git archive --prefix=$proj-$release_git_archive_prefix$rc.src/ $tree_id . | xz >$target_dir/$proj-$release_tarball$rc.src.tar.xz
         popd
     done
 }
@@ -81,6 +106,9 @@ while [ $# -gt 0 ]; do
         -final | --final )
             rc="final"
             ;;
+        -snapshot | --snapshot )
+            snapshot="-"
+            ;;
         -h | -help | --help )
             usage
             exit 0
@@ -94,7 +122,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [ "x$release" = "x" ]; then
+if [ "$snapshot" != "" ]; then 
+    if [[ "$rc" != "" || "$release" != "" ]]; then
+        echo "error: must not specify rc when creating a snapshot"
+        exit 1
+    fi
+elif [ "x$release" = "x" ]; then
     echo "error: need to specify a release version"
     exit 1
 fi

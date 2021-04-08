@@ -1,0 +1,47 @@
+name: Release source-snapshot
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release-source-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: checkout llvm/llvm-project repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          ref: snapshot
+          token: ${{ github.token }}
+          fetch-depth: 0
+          submodules: true
+      
+      - name: setup upstream remote
+        run: git remote add upstream git@github.com:llvm/llvm-project.git
+      
+      - name: fetch from upstream remote
+        run: git fetch upstream
+      
+      - name: rebase onto upstream/main
+        run: git rebase upstream/main
+      
+      - name: push back origin/snapshot
+        run: git push origin HEAD:snapshot
+
+      - name: create source-snapshot tarballs
+        run: |
+          cd llvm/utils/release
+          ./export.sh -snapshot
+
+      - name: Upload source tarballs to source-snapshot release assets (continous release)
+        uses: softprops/action-gh-release@v1
+        with:
+          name: source-snapshot
+          draft: false
+          tag_name: source-snapshot
+          fail_on_unmatched_files: true
+          files: |
+            llvm/utils/release/*.src.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

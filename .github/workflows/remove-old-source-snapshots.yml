@@ -1,0 +1,46 @@
+name: Remove old source-snapshots
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  find:
+    name: Find 1 week or older source-snapshot release assets
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.assets.outputs.name_id_pairs }}
+    steps:
+      - name: find 
+        id: assets
+        run: |
+          curl \
+            -H "Accept: application/vnd.github.v3+json" \
+            -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
+          | jq '.assets' > assets.json
+
+          # Get all assets older than one week (those shall be removed)
+          jq --arg e $(date -d "-1 week" +%Y-%m-%dT%H:%S) 'map(select(.created_at | . <= $e + "z"))' < assets.json > remove_assets.json
+          
+          echo "about to remove these assets:"
+          jq '.[].name' -r  < remove_assets.json
+
+          echo "::set-output name=name_id_pairs::`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`"
+  
+  delete:
+    runs-on: ubuntu-latest
+    if: needs.find.outputs.matrix != ''
+    needs: find
+    strategy:
+      matrix:
+        cfg:
+          - ${{ fromJson(needs.find.outputs.matrix) }}
+    steps:
+      - name: delete ${{ matrix.cfg.name }} (ID=${{ matrix.cfg.id }})
+        uses: octokit/request-action@v2.x
+        with:
+          route: DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}
+          owner: ${{ context.repo.owner }}
+          repo: ${{ context.repo.repo }}
+          asset_id: ${{ matrix.cfg.id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
