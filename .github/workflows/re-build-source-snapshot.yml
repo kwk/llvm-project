@@ -1,0 +1,98 @@
+name: re-build source-snapshot
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+
+  # In order to re-build source snapshots and upload them, we must first delete
+  # the old ones from today; otherwise there would be a conflict.
+  find:
+    name: find source snapshots of today
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.assets.outputs.name_id_pairs }}
+    steps:
+      - name: find
+        id: assets
+        run: |
+          curl \
+            -H "Accept: application/vnd.github.v3+json" \
+            -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
+          | jq '.assets' > assets.json
+
+          # Get all assets assets of today
+          jq 'map(select((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d"))))' < assets.json > remove_assets.json
+          
+          echo "about to remove these assets:"
+          jq '.[].name' -r  < remove_assets.json
+
+          echo "::set-output name=name_id_pairs::`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`"
+  
+  delete:
+    needs: find
+    name: delete source-snapshots of today
+    runs-on: ubuntu-latest
+    if: needs.find.outputs.matrix != ''
+    strategy:
+      matrix:
+        cfg:
+          - ${{ fromJson(needs.find.outputs.matrix) }}
+    steps:
+      - name: delete ${{ matrix.cfg.name }} (ID=${{ matrix.cfg.id }})
+        uses: octokit/request-action@v2.x
+        with:
+          route: DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}
+          owner: 'kwk'
+          repo: 'llvm-project'
+          asset_id: ${{ matrix.cfg.id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  re-build-source-snapshot:
+    needs: delete
+    name: re-build source snapshots for today
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: checkout llvm/llvm-project repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          ref: snapshot
+          token: ${{ github.token }}
+          fetch-depth: 0
+          submodules: true
+      
+      - name: setup upstream remote
+        run: git remote add upstream https://github.com/llvm/llvm-project.git
+      
+      - name: fetch from upstream remote
+        run: git fetch upstream
+      
+      - name: rebase onto upstream/main
+        run: |
+          git config user.email "snapshot-bot@example.com"
+          git config user.name "snapshot bot"
+          git rebase upstream/main
+      
+      - name: push back origin/snapshot
+        run: git push -f origin HEAD:snapshot
+
+      - name: create source-snapshot tarballs
+        run: |
+          cd llvm/utils/release
+          ./export.sh -snapshot
+
+      - name: Upload source tarballs to source-snapshot release assets (continous release)
+        uses: softprops/action-gh-release@v1
+        with:
+          name: source-snapshot
+          draft: false
+          prerelease: true
+          tag_name: source-snapshot
+          fail_on_unmatched_files: true
+          files: |
+            llvm/utils/release/*.src.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
