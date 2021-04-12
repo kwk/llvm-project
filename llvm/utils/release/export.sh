@@ -67,7 +67,7 @@ export_sources() {
     pushd $llvm_src_dir/
     tree_id=$tag
     if [ "$snapshot" != "" ]; then
-        tree_id="main"
+        tree_id="HEAD"
     fi
     git archive --prefix=llvm-project-$release_git_archive_prefix$rc.src/ $tree_id . | xz >$target_dir/llvm-project-$release_tarball$rc.src.tar.xz
     popd
