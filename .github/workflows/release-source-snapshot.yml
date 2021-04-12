@@ -30,7 +30,7 @@ jobs:
           git rebase upstream/main
       
       - name: push back origin/snapshot
-        run: git push origin HEAD:snapshot
+        run: git push -f origin HEAD:snapshot
 
       - name: create source-snapshot tarballs
         run: |
