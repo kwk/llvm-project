@@ -1,7 +1,14 @@
 name: re-build source-snapshot
 
 on:
-  workflow_dispatch: {}
+  # Uncomment to be able to trigger the workflow manually
+  # See https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
+  # workflow_dispatch: {}
+
+  schedule:
+    # Everyday at 04:00am
+    # See https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
+    - cron:  '0 4 * * *'
 
 jobs:
 
@@ -21,7 +28,7 @@ jobs:
             -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
           | jq '.assets' > assets.json
 
-          # Get all assets assets of today
+          # Get all assets of today
           jq 'map(select((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d"))))' < assets.json > remove_assets.json
           
           echo "about to remove these assets:"
