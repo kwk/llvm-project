@@ -27,8 +27,7 @@ jobs:
 
           echo "::set-output name=name_id_pairs::`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`"
   
-  delete-todays-snapshot:
-    id: delete
+  delete:
     needs: find
     runs-on: ubuntu-latest
     if: needs.find.outputs.matrix != ''
