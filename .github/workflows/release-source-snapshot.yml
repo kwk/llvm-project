@@ -85,6 +85,7 @@ jobs:
         with:
           name: source-snapshot
           draft: false
+          prerelease: true
           tag_name: source-snapshot
           fail_on_unmatched_files: true
           files: |
