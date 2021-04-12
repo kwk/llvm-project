@@ -24,7 +24,10 @@ jobs:
         run: git fetch upstream
       
       - name: rebase onto upstream/main
-        run: git rebase upstream/main
+        run: |
+          git config user.email "snapshot-bot@example.com"
+          git config user.name "snapshot bot"
+          git rebase upstream/main
       
       - name: push back origin/snapshot
         run: git push origin HEAD:snapshot
