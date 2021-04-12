@@ -18,7 +18,7 @@ jobs:
           submodules: true
       
       - name: setup upstream remote
-        run: git remote add upstream git@github.com:llvm/llvm-project.git
+        run: git remote add upstream https://github.com/llvm/llvm-project.git
       
       - name: fetch from upstream remote
         run: git fetch upstream
