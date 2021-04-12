@@ -40,8 +40,8 @@ jobs:
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}
-          owner: ${{ context.repo.owner }}
-          repo: ${{ context.repo.repo }}
+          owner: 'kwk'
+          repo: 'llvm-project'
           asset_id: ${{ matrix.cfg.id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
