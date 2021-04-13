@@ -10,8 +10,7 @@ on:
     # See https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
     - cron:  '0 4 * * *'
 
-defaults:
-  runs-on: ubuntu-latest
+jobs:
 
   # In order to re-build source snapshots and upload them, we must first delete
   # the old ones from today; otherwise there would be a conflict. As a measure
@@ -112,6 +111,7 @@ defaults:
         run: |
           cd llvm/utils/release
           ./export.sh -snapshot
+          
 
       - name: upload today's source snapshots and version file
         uses: softprops/action-gh-release@v1
