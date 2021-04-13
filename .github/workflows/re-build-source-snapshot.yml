@@ -28,9 +28,9 @@ jobs:
           curl \
             -H "Accept: application/vnd.github.v3+json" \
             -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
-          | jq '.assets' > assets.json
+          | jq '.assets' | tee assets.json
 
-          # This is pretty awkward but otherwise the matrix below complains about:
+          m# This is pretty awkward but otherwise the matrix below complains about:
           # Matrix vector 'cfg' does not contain any values
           pairs='[{"name":"stop","id":"stop"}]'
 
@@ -44,7 +44,7 @@ jobs:
                   or 
                   ((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d")))
                 )
-              )' < assets.json > remove_assets.json
+              )' < assets.json | tee remove_assets.json
 
             echo "[]" > empty.json
             set +e
