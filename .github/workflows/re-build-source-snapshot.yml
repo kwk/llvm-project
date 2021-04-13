@@ -10,12 +10,15 @@ on:
     # See https://docs.github.com/en/actions/reference/events-that-trigger-workflows#schedule
     - cron:  '0 4 * * *'
 
-jobs:
+defaults:
+  runs-on: ubuntu-latest
 
   # In order to re-build source snapshots and upload them, we must first delete
-  # the old ones from today; otherwise there would be a conflict.
+  # the old ones from today; otherwise there would be a conflict. As a measure
+  # of not storing old snapshots for too long we'll delete older ones here as
+  # well.
   find:
-    name: find today's source snapshots
+    name: find today's and week or older source snapshots
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.assets.outputs.name_id_pairs }}
@@ -33,9 +36,17 @@ jobs:
           pairs='[{"name":"stop","id":"stop"}]'
 
           if [ -s assets.json ]; then
-            # Get all assets of today
-            jq 'map(select((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d"))))' < assets.json > remove_assets.json
-            
+            # Get all assets of today or older than a week
+            jq \
+              --arg e $(date -d "-3 days" +%Y-%m-%dT%H:%S) \
+              'map(
+                select(
+                  (.created_at <= $e + "z")
+                  or 
+                  ((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d")))
+                )
+              )' < assets.json > remove_assets.json
+
             echo "[]" > empty.json
             diff remove_assets.json empty.json >/dev/null
             if [ "$?" != "0" ]; then
@@ -49,7 +60,7 @@ jobs:
   
   delete:
     needs: find
-    name: delete today's source-snapshots (if any)
+    name: delete found source-snapshots (if any)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -69,7 +80,7 @@ jobs:
 
   re-build-source-snapshot:
     needs: delete
-    name: re-build source snapshots for today
+    name: re-build today's source snapshot
     runs-on: ubuntu-latest
     steps:
 
@@ -102,7 +113,7 @@ jobs:
           cd llvm/utils/release
           ./export.sh -snapshot
 
-      - name: Upload source tarballs to source-snapshot release assets (continous release)
+      - name: upload today's source snapshots and version file
         uses: softprops/action-gh-release@v1
         with:
           name: source-snapshot
@@ -112,5 +123,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             llvm/utils/release/*.src.tar.xz
+            llvm/utils/release/llvm-version-*.txt
+            llvm/utils/release/llvm-git-revision-*.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
