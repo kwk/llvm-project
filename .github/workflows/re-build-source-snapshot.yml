@@ -35,7 +35,7 @@ jobs:
           pairs='[{"name":"stop","id":"stop"}]'
 
           if [ -s assets.json ]; then
-            # Get all assets of today or older than a week
+            # Get all of today's assets or those older than three days
             jq \
               --arg e $(date -d "-3 days" +%Y-%m-%dT%H:%S) \
               'map(
@@ -47,8 +47,8 @@ jobs:
               )' < assets.json > remove_assets.json
 
             echo "[]" > empty.json
-            diff remove_assets.json empty.json >/dev/null
-            if [ "$?" != "0" ]; then
+            diff remove_assets.json empty.json > mydiff
+            if [ -s mydiff ] ]; then
               echo "about to remove these assets:"
               jq '.[].name' -r  < remove_assets.json
 
