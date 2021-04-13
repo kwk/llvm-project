@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-       cfg: [ ${{ needs.find.outputs.matrix }} ] 
+       cfg:
+         - ${{ fromJson(needs.find.outputs.matrix) }}
 
     steps:
       - name: "step1"
