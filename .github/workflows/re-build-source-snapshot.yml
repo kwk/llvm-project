@@ -47,7 +47,9 @@ jobs:
               )' < assets.json > remove_assets.json
 
             echo "[]" > empty.json
+            set +e
             diff remove_assets.json empty.json > mydiff
+            set -e
             if [ -s mydiff ] ]; then
               echo "about to remove these assets:"
               jq '.[].name' -r  < remove_assets.json
