@@ -34,13 +34,17 @@ jobs:
           echo "about to remove these assets:"
           jq '.[].name' -r  < remove_assets.json
 
-          echo "::set-output name=name_id_pairs::`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`"
+          pairs=`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`
+          if [ "$pairs" == "" ]; then
+            pairs='[]'
+          fi
+
+          echo "::set-output name=name_id_pairs::$pairs"
   
   delete:
     needs: find
     name: delete source-snapshots of today
     runs-on: ubuntu-latest
-    if: ${{ needs.find.outputs.matrix != '' }}
     strategy:
       matrix:
         cfg:
