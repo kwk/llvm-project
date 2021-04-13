@@ -3,7 +3,7 @@ name: re-build source-snapshot
 on:
   # Uncomment to be able to trigger the workflow manually
   # See https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events
-  # workflow_dispatch: {}
+  workflow_dispatch: {}
 
   schedule:
     # Everyday at 04:00am
