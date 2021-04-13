@@ -57,7 +57,7 @@ jobs:
           - ${{ fromJson(needs.find.outputs.matrix) }}
     steps:
       - name: delete ${{ matrix.cfg.name }} (ID=${{ matrix.cfg.id }})
-        if: ${{ matrix.cfg.name != "stop" && matrix.cfg.id != "stop" }}
+        if: ${{ matrix.cfg.name != 'stop' && matrix.cfg.id != 'stop' }}
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}
