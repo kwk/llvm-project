@@ -58,6 +58,8 @@ export_sources() {
         # tarball can be extremely helpful!
         release_git_archive_prefix=$llvm_version-$yyyymmdd-g$git_short_rev
         release_tarball=$yyyymmdd
+        echo $llvm_version > "llvm-version-$yyyymmdd.txt"
+        echo "$(git rev-parse --short HEAD)" > "llvm-git-revision-$yyyymmdd.txt"
     fi
 
     echo $tag
