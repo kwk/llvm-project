@@ -15,7 +15,7 @@ jobs:
       - name: find
         id: assets
         run: |
-          echo '::set-output name=name_id_pairs::{"name": "hello", id:"world"},{"name": "hola", id:"mundo"}'
+          echo '::set-output name=name_id_pairs::[{"name": "hello", id:"world"},{"name": "hola", id:"mundo"}]'
   
   foo:
     needs: find
