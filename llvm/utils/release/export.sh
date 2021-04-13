@@ -11,7 +11,7 @@
 #
 #===------------------------------------------------------------------------===#
 
-set -ex
+set -e
 
 projects="llvm clang compiler-rt libcxx libcxxabi libclc clang-tools-extra polly lldb lld openmp libunwind flang"
 
