@@ -28,7 +28,10 @@ jobs:
             -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
           | jq '.assets' > assets.json
 
-          pairs='[]'
+          # This is pretty awkward but otherwise the matrix below complains about:
+          # Matrix vector 'cfg' does not contain any values
+          pairs='[{"name":"stop","id":"stop"}]'
+
           if [ -s assets.json ]; then
             # Get all assets of today
             jq 'map(select((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d"))))' < assets.json > remove_assets.json
@@ -54,6 +57,7 @@ jobs:
           - ${{ fromJson(needs.find.outputs.matrix) }}
     steps:
       - name: delete ${{ matrix.cfg.name }} (ID=${{ matrix.cfg.id }})
+        if: ${{ matrix.cfg.name != "stop" && matrix.cfg.id != "stop" }}
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}
