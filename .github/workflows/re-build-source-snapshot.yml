@@ -68,7 +68,6 @@ jobs:
   
   delete:
     needs: find
-    name: delete found source-snapshots (if any)
     runs-on: ubuntu-latest
     strategy:
       matrix:
