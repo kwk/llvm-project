@@ -57,7 +57,7 @@ jobs:
             set -e
             echo "::endgroup::"
 
-            if [ -s mydiff ] ]; then
+            if [ -s mydiff ]; then
               echo "::group::Assets to be removed"
               jq '.[].name' -r  < remove_assets.json
               echo "::endgroup::"
