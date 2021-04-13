@@ -40,7 +40,7 @@ jobs:
     needs: find
     name: delete source-snapshots of today
     runs-on: ubuntu-latest
-    if: needs.find.outputs.matrix != ''
+    if: needs.find.outputs.matrix != []
     strategy:
       matrix:
         cfg:
