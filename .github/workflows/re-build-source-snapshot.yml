@@ -33,7 +33,9 @@ jobs:
             # Get all assets of today
             jq 'map(select((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d"))))' < assets.json > remove_assets.json
             
-            if [ -s remove_assets.json ]; then
+            echo "[]" > empty.json
+            diff remove_assets.json empty.json >/dev/null
+            if [ "$?" != "0" ]; then
               echo "about to remove these assets:"
               jq '.[].name' -r  < remove_assets.json
 
