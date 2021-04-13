@@ -25,16 +25,19 @@ jobs:
       - name: find
         id: assets
         run: |
+          echo "::group::Find all source snapshot release assets"
           curl \
             -H "Accept: application/vnd.github.v3+json" \
             -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/source-snapshot \
           | jq '.assets' | tee assets.json
+          echo "::endgroup::"
 
-          m# This is pretty awkward but otherwise the matrix below complains about:
+          # This is pretty awkward but otherwise the matrix below complains about:
           # Matrix vector 'cfg' does not contain any values
           pairs='[{"name":"stop","id":"stop"}]'
 
           if [ -s assets.json ]; then
+            echo "::group::Get assets from today or older than three days"
             # Get all of today's assets or those older than three days
             jq \
               --arg e $(date -d "-3 days" +%Y-%m-%dT%H:%S) \
@@ -45,15 +48,19 @@ jobs:
                   ((.created_at | fromdate | strftime("%Y%m%d")) == (now | strftime("%Y%m%d")))
                 )
               )' < assets.json | tee remove_assets.json
+            echo "::endgroup::"
 
+            echo "::group::diff"
             echo "[]" > empty.json
             set +e
-            diff remove_assets.json empty.json > mydiff
+            diff remove_assets.json empty.json | tee mydiff
             set -e
-            if [ -s mydiff ] ]; then
-              echo "about to remove these assets:"
-              jq '.[].name' -r  < remove_assets.json
+            echo "::endgroup::"
 
+            if [ -s mydiff ] ]; then
+              echo "::group::Assets to be removed"
+              jq '.[].name' -r  < remove_assets.json
+              echo "::endgroup::"
               pairs=`jq '[.[] | {name:.name, id:.id} ]' -rc < remove_assets.json`
             fi
           fi
