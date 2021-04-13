@@ -15,7 +15,13 @@ jobs:
       - name: find
         id: assets
         run: |
-          echo '::set-output name=name_id_pairs::[{"name": "hello", id:"world"},{"name": "hola", id:"mundo"}]'
+          input='[{"name": "hello", id:"world"},{"name": "hola", id:"mundo"}]'
+          pairs=`echo $input | jq '[.[] | {name:.name, id:.id} ]' -rc`
+          pairs=
+          if [ "$pairs" == "" ]; then
+            pairs='[]'
+          fi
+          echo '::set-output name=name_id_pairs::$pairs'
   
   foo:
     needs: find

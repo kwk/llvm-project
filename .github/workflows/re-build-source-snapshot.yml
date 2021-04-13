@@ -15,7 +15,7 @@ jobs:
   # In order to re-build source snapshots and upload them, we must first delete
   # the old ones from today; otherwise there would be a conflict.
   find:
-    name: find source snapshots of today
+    name: find today's source snapshots
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.assets.outputs.name_id_pairs }}
@@ -43,7 +43,7 @@ jobs:
   
   delete:
     needs: find
-    name: delete source-snapshots of today
+    name: delete today's source-snapshots (if any)
     runs-on: ubuntu-latest
     strategy:
       matrix:
