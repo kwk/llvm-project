@@ -91,32 +91,23 @@ jobs:
     name: re-build today's source snapshot
     runs-on: ubuntu-latest
     steps:
-
-      # - name: checkout llvm/llvm-project repo
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: ${{ github.repository }}
-      #     ref: snapshot
-      #     token: ${{ github.token }}
-      #     fetch-depth: 1
-      #     submodules: true
       
-      - name: partial clone and sparse checkout of kwk/llvm-project repo
+      - name: clone kwk/llvm-project repo without checkout
+        run: git clone --no-tags --sinlge-branch --branch=snapshot --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git .
+      
+      - name: minimal checkout of only the files we need
         run: |
-          git clone --branch=main --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git kwk
-          git -C kwk sparse-checkout init --cone
-          git -C kwk sparse-checkout set llvm/utils/release/export.sh
-          tree kwk
-          
+          git sparse-checkout init
+          git sparse-checkout set llvm/utils/release/export.sh llvm/CMakeLists.txt
+      
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
-      
-      - name: fetch from upstream remote
-        run: git fetch upstream
+          
+      - name: minimal fetch from upstream remote
+        run: git fetch --depth=1 --no-tags upstream main
 
       - name: create source-snapshot tarballs
-        run: |
-          llvm/utils/release/export.sh --snapshot upstream/main
+        run: llvm/utils/release/export.sh --snapshot upstream/main
       
       - name: upload today's source snapshots and version file
         uses: softprops/action-gh-release@v1
