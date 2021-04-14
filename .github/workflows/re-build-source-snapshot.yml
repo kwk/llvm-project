@@ -104,9 +104,10 @@ jobs:
       - name: partial clone and sparse checkout of kwk/llvm-project repo
         run: |
           git clone --branch=main --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git kwk
-          git -C kwk parse-checkout init --cone
+          git -C kwk sparse-checkout init --cone
           git -C kwk sparse-checkout set llvm/utils/release/export.sh
-
+          tree kwk
+          
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
       
