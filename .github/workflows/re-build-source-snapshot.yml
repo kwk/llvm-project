@@ -100,6 +100,9 @@ jobs:
           fetch-depth: 0
           submodules: true
       
+      ### TODO(kwk): This fiddleing with remotes and pushing back to the
+      ### repository needs to go away if we want this upstream.
+
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
       
@@ -114,6 +117,8 @@ jobs:
       
       - name: push back origin/snapshot
         run: git push -f origin HEAD:snapshot
+
+      ### END TODO
 
       - name: create source-snapshot tarballs
         run: |
@@ -132,6 +137,7 @@ jobs:
           files: |
             llvm/utils/release/*.src.tar.xz
             llvm/utils/release/llvm-version-*.txt
+            llvm/utils/release/llvm-version-rc-*.txt
             llvm/utils/release/llvm-git-revision-*.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

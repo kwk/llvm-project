@@ -42,24 +42,31 @@ export_sources() {
     llvm_src_dir=$(readlink -f $(dirname "$(readlink -f "$0")")/../../..)
     [ -d $llvm_src_dir/.git ] || ( echo "No git repository at $llvm_src_dir" ; exit 1 )
 
-    release_git_archive_prefix=$release
     release_tarball=$release
-
+    llvm_version=$(grep -oP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' $llvm_src_dir/llvm/CMakeLists.txt | paste -sd '.')
+    
     if [ "$snapshot" != "" ]; then
-        llvm_version=$(grep -oP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' $llvm_src_dir/llvm/CMakeLists.txt | paste -sd '.')
-        git_short_rev=$(git rev-parse --short HEAD)
+        release=$llvm_version
+        
+        # TODO(kwk): The current workflow file "re-build-source-snapshot.yml"
+        # will rebase onto upstream every time the script is being run, that's
+        # why the git revision we see here is only temporarily valid until the
+        # next rebase. Try to remove the rebasing to make this a permanently
+        # available sha1.
+        git_rev_short=$(git rev-parse --short HEAD)
+        git_rev=$(git rev-parse --short HEAD)
+
         # For daily snapshots of source tarballs, we want to be able to
         # determine the URL to the source tarball programmatically only from the
-        # package name and the current date. Yet, the directory packaged in the
-        # tarball should contain the version information of the shared LLVM
-        # source tree as well as the git revision. This might be a surprise but
-        # a package like clang or compiler-rt don't know about the LLVM version
-        # itself. That's why a version encoded in the directory packaged in the
-        # tarball can be extremely helpful!
-        release_git_archive_prefix=$llvm_version-$yyyymmdd-g$git_short_rev
+        # package name and the current date. 
+
+        # This might be a surprise but a package like clang or compiler-rt don't
+        # know about the LLVM version itself. That's why we also ship the
+        # llvm-version* and llvm-git* files.
         release_tarball=$yyyymmdd
-        echo $llvm_version > "llvm-version-$yyyymmdd.txt"
-        echo "$(git rev-parse --short HEAD)" > "llvm-git-revision-$yyyymmdd.txt"
+        echo "$llvm_version" > "llvm-version-$yyyymmdd.txt"
+        echo "$rc" > "llvm-version-rc-$yyyymmdd.txt"
+        echo "$git_rev" > "llvm-git-revision-$yyyymmdd.txt"
     fi
 
     echo $tag
@@ -71,7 +78,7 @@ export_sources() {
     if [ "$snapshot" != "" ]; then
         tree_id="HEAD"
     fi
-    git archive --prefix=llvm-project-$release_git_archive_prefix$rc.src/ $tree_id . | xz >$target_dir/llvm-project-$release_tarball$rc.src.tar.xz
+    git archive --prefix=llvm-project-$release$rc.src/ $tree_id . | xz >$target_dir/llvm-project-$release_tarball$rc.src.tar.xz
     popd
 
     if [ "$snapshot" == "" ]; then
@@ -90,7 +97,7 @@ export_sources() {
     for proj in $projects; do
         echo "Creating tarball for $proj ..."
         pushd $llvm_src_dir/$proj
-        git archive --prefix=$proj-$release_git_archive_prefix$rc.src/ $tree_id . | xz >$target_dir/$proj-$release_tarball$rc.src.tar.xz
+        git archive --prefix=$proj-$release$rc.src/ $tree_id . | xz >$target_dir/$proj-$release_tarball$rc.src.tar.xz
         popd
     done
 }
@@ -109,7 +116,7 @@ while [ $# -gt 0 ]; do
             rc="final"
             ;;
         -snapshot | --snapshot )
-            snapshot="-"
+            snapshot="1"
             ;;
         -h | -help | --help )
             usage
