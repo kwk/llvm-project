@@ -93,7 +93,7 @@ jobs:
     steps:
       
       - name: clone kwk/llvm-project repo without checkout
-        run: git clone --no-tags --sinlge-branch --branch=snapshot --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git .
+        run: git clone --no-tags --single-branch --branch=snapshot --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git .
       
       - name: minimal checkout of only the files we need
         run: |
