@@ -17,7 +17,7 @@ jobs:
   # of not storing old snapshots for too long we'll delete older ones here as
   # well.
   find:
-    name: find today's and week or older source snapshots
+    name: find today's and 3 days or older source snapshots
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.assets.outputs.name_id_pairs }}
@@ -92,15 +92,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: checkout llvm/llvm-project repo
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.repository }}
-          ref: snapshot
-          token: ${{ github.token }}
-          fetch-depth: 0
-          submodules: true
+      # - name: checkout llvm/llvm-project repo
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: ${{ github.repository }}
+      #     ref: snapshot
+      #     token: ${{ github.token }}
+      #     fetch-depth: 1
+      #     submodules: true
       
+      - name: partial clone and sparse checkout of kwk/llvm-project repo
+        run: |
+          git clone --branch=main --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git kwk
+          git -C kwk parse-checkout init --cone
+          git -C kwk sparse-checkout set llvm/utils/release/export.sh
+
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
       
