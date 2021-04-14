@@ -70,6 +70,7 @@ jobs:
     needs: find
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 10
       matrix:
         cfg:
           - ${{ fromJson(needs.find.outputs.matrix) }}
