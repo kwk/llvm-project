@@ -99,10 +99,6 @@ jobs:
       
       - name: clone kwk/llvm-project repo without checkout
         run: git clone --no-tags --single-branch --branch=snapshot --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git .
-      
-      - name: set some git config
-        run: |
-          git config --add gc.auto 0
 
       - name: minimal checkout of only the files we need
         run: |
@@ -112,8 +108,9 @@ jobs:
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
           
-      - name: minimal fetch from upstream remote
-        run: git fetch --depth=1 --no-tags upstream main
+      - name: fetch from upstream remote
+        run: git fetch --depth=1 upstream main
+        #run: git fetch --depth=1 --no-tags upstream main
 
       - name: create source-snapshot tarballs
         run: llvm/utils/release/export.sh --snapshot upstream/main
