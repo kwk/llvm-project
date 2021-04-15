@@ -109,8 +109,15 @@ jobs:
         run: git remote add upstream https://github.com/llvm/llvm-project.git
           
       - name: fetch from upstream remote
-        run: git fetch --depth=1 upstream main
-        #run: git fetch --depth=1 --no-tags upstream main
+        run: git fetch --depth=1 --no-tags upstream main
+
+      - name: git fsck
+        run: git fsck
+
+      - name: git gc --prune=now
+        run: git gc --prune=now
+          
+          
 
       - name: create source-snapshot tarballs
         run: llvm/utils/release/export.sh --snapshot upstream/main
