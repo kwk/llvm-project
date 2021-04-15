@@ -25,11 +25,6 @@ jobs:
       - name: find
         id: assets
         run: |
-          echo "::group::Git config"
-          git config -l
-          echo "::endgroup::"
-          
-
           echo "::group::Find all source snapshot release assets"
           curl \
             -H "Accept: application/vnd.github.v3+json" \
@@ -96,28 +91,21 @@ jobs:
     name: re-build today's source snapshot
     runs-on: ubuntu-latest
     steps:
-      
-      - name: clone kwk/llvm-project repo without checkout
-        run: git clone --no-tags --single-branch --branch=snapshot --depth=1 --filter=blob:none --sparse https://github.com/kwk/llvm-project.git .
 
-      - name: minimal checkout of only the files we need
-        run: |
-          git sparse-checkout init
-          git sparse-checkout set llvm/utils/release/export.sh llvm/CMakeLists.txt
+      - name: checkout llvm/llvm-project repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          ref: snapshot
+          token: ${{ github.token }}
+          fetch-depth: 1
+          submodules: true
       
       - name: setup upstream remote
         run: git remote add upstream https://github.com/llvm/llvm-project.git
           
-      - name: fetch from upstream remote
+      - name: minimal fetch from upstream remote
         run: git fetch --depth=1 --no-tags upstream main
-
-      - name: git fsck
-        run: git fsck
-
-      - name: git gc --prune=now
-        run: git gc --prune=now
-          
-          
 
       - name: create source-snapshot tarballs
         run: llvm/utils/release/export.sh --snapshot upstream/main
