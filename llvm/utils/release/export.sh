@@ -43,7 +43,7 @@ Flags:
   -final    | --final                              When provided, this option will disable the rc flag
   -snapshot | --snapshot <git-ref>                 (optional) Use <git-ref> to determine the release and don't export the test-suite files
 
-These are the filenames (with <placeholders>) for the artifacts and symbolic
+These are the filenames (with <placeholders>) for the artifacts and hard
 links for each LLVM component created by this script: 
 
 $(\
@@ -58,7 +58,7 @@ Additional files being generated:
   * llvm-project-<RELEASE><RC>.src.tar.xz    (the complete LLVM source project)
   * test-suite-<RELEASE><RC>.src.tar.xz      (only when not using --snapshot)
 
-To ease the creation of snapshot builds, we also provide these files/links
+To ease the creation of snapshot builds, we also provide these files
 
   * llvm-release-<YYYYMMDD>.txt        (contains the <RELEASE> as a text)
   * llvm-rc-<YYYYMMDD>.txt             (contains the rc version passed to the invocation of $(basename $0))
@@ -113,7 +113,7 @@ export_sources() {
     echo "$git_rev" > $target_dir/llvm-git-revision-$yyyymmdd.txt
     
     git archive --prefix=llvm-project-$release$rc.src/ $tree_id . | xz >$target_dir/llvm-project-$release$rc.src.tar.xz
-    ln -sfv $target_dir/llvm-project-$release$rc.src.tar.xz $target_dir/llvm-project-$yyyymmdd.src.tar.xz
+    ln -fv $target_dir/llvm-project-$release$rc.src.tar.xz $target_dir/llvm-project-$yyyymmdd.src.tar.xz
     popd
 
     if [ -z "$snapshot" ]; then
@@ -133,7 +133,7 @@ export_sources() {
         echo "Creating tarball for $proj ..."
         pushd $llvm_src_dir/$proj
         git archive --prefix=$proj-$release$rc.src/ $tree_id . | xz >$target_dir/$proj-$release$rc.src.tar.xz
-        ln -sfv $target_dir/$proj-$release$rc.src.tar.xz $target_dir/$proj-$yyyymmdd.src.tar.xz
+        ln -fv $target_dir/$proj-$release$rc.src.tar.xz $target_dir/$proj-$yyyymmdd.src.tar.xz
         popd
     done
 }
