@@ -25,6 +25,12 @@ jobs:
       - name: find
         id: assets
         run: |
+          echo "::group::Git config"
+          git config -l
+          echo "::endgroup::"
+          exit 1
+          
+
           echo "::group::Find all source snapshot release assets"
           curl \
             -H "Accept: application/vnd.github.v3+json" \
