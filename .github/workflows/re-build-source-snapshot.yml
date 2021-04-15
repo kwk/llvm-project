@@ -32,11 +32,13 @@ jobs:
           | jq '.assets' | tee assets.json
           echo "::endgroup::"
 
+          if 
+
           # This is pretty awkward but otherwise the matrix below complains about:
           # Matrix vector 'cfg' does not contain any values
           pairs='[{"name":"stop","id":"stop"}]'
 
-          if [ -s assets.json ]; then
+          if [[ -s assets.json && "`cat assets.json`" != "null" ]]; then
             echo "::group::Get assets from today or older than three days"
             # Get all of today's assets or those older than three days
             jq \
