@@ -32,8 +32,6 @@ jobs:
           | jq '.assets' | tee assets.json
           echo "::endgroup::"
 
-          if 
-
           # This is pretty awkward but otherwise the matrix below complains about:
           # Matrix vector 'cfg' does not contain any values
           pairs='[{"name":"stop","id":"stop"}]'
