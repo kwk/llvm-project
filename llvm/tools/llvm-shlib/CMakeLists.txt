@@ -2,6 +2,11 @@
 # library is enabled by setting LLVM_BUILD_LLVM_DYLIB=yes on the CMake
 # commandline. By default the shared library only exports the LLVM C API.
 
+# In the main branch, LLVM_ABI_REVISION should always be 0.  In the release
+# branches, this should be incremented before each release candidate every
+# time the ABI of libLLVM.so changes.
+set(LLVM_ABI_REVISION 0 CACHE STRING "ABI Revision number for SONAMEs (default: 0)")
+
 set(SOURCES
   libllvm.cpp
   )
@@ -67,6 +72,10 @@ if(LLVM_BUILD_LLVM_DYLIB)
     set_property(TARGET LLVM APPEND_STRING PROPERTY
                 LINK_FLAGS
                 " -compatibility_version 1 -current_version ${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}")
+  else()
+    set_target_properties(LLVM
+      PROPERTIES
+      SOVERSION ${LLVM_ABI_REVISION})
   endif()
 
   if(TARGET libLLVMExports)
