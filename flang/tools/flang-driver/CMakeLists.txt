@@ -23,8 +23,7 @@ target_link_libraries(flang-new
 
 clang_target_link_libraries(flang-new
   PRIVATE
-  clangDriver
-  clangBasic
+  clang-cpp
 )
 
 option(FLANG_PLUGIN_SUPPORT "Build Flang with plugin support." ON)
