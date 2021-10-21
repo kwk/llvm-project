@@ -1,13 +1,16 @@
 #!/bin/bash
 #<white>vim:syntax=sh 
 
+llvm_src_dir=$(readlink -f $(dirname "$(readlink -f "$0")")/../../..)
+[ -d $llvm_src_dir/.git ] || ( echo "No git repository at $llvm_src_dir" ; exit 1 )
+
 function git_commit_time_yyyymmdd {
-    local commit_timestamp=$(git --no-pager log -1 --format="%ct")
+    local commit_timestamp=$(git -C $llvm_src_dir  --no-pager log -1 --format="%ct")
     echo -n $(date +%Y%m%d --date=@${commit_timestamp})
 }
 
 function git_author_time_yyyymmdd {
-    local commit_timestamp=$(git --no-pager log -1 --format="%at")
+    local commit_timestamp=$(git -C $llvm_src_dir  --no-pager log -1 --format="%at")
     echo -n $(date +%Y%m%d --date=@${commit_timestamp})
 }
 
@@ -18,9 +21,6 @@ function llvm_git_upstream_ref {
 }
 
 function llvm_release {
-    llvm_src_dir=$(readlink -f $(dirname "$(readlink -f "$0")")/../../..)
-    [ -d $llvm_src_dir/.git ] || ( echo "No git repository at $llvm_src_dir" ; exit 1 )
-
     git_ref=$(llvm_git_upstream_ref)
     echo -n $(git -C $llvm_src_dir show $git_ref:llvm/CMakeLists.txt | grep -ioP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' | paste -sd '.')
 }
