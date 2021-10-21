@@ -48,6 +48,7 @@ BuildRequires: python3-setuptools
 lit is a tool used by the LLVM project for executing its test suites.
 
 %package -n python3-lit
+Summary: LLVM lit test runner for Python 3
 
 Requires: python3-setuptools
 
