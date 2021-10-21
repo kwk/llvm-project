@@ -3,6 +3,8 @@
 
 # See https://docs.pagure.org/rpkg-util/v3/macro_reference.html#macro-reference-v3
 
+{{{ llvm_snapshot_prefix }}}
+
 %bcond_without check
 
 # git_dir_name returns repository name derived from remote Git repository URL
@@ -20,7 +22,8 @@ Summary: LLVM lit test runner for Python 3
 #
 # commit_count is a number of commits from the latest tag to the current commit for the given subpackage.
 # current_commit_short_hash is a short (8-chars long) hash of the current commit.
-Version: {{{ git_cwd_version lead="20211020" }}}
+Version: {{{ llvm_snapshot_version }}}
+
 
 # This can be useful later for adding downstream patches
 Release:    1%{?dist}
@@ -56,7 +59,6 @@ BuildRequires: python3-devel
 BuildRequires: python3-setuptools
 
 %description
-{{{ git_commit_time_yyyymmdd }}}
 lit is a tool used by the LLVM project for executing its test suites.
 
 %package -n python3-lit
