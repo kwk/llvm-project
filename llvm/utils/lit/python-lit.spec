@@ -1,15 +1,28 @@
 # The following tag is to get correct syntax highlighting for this file in vim text editor
 # vim: syntax=spec
 
+# See https://docs.pagure.org/rpkg-util/v3/macro_reference.html#macro-reference-v3
+
 %bcond_without check
 
 # git_dir_name returns repository name derived from remote Git repository URL
-Name:       {{{ git_dir_name name=python-lit }}}
+Name:       {{{ git_dir_name name="python-lit" }}}
 
 # Basic description of the package
 Summary: LLVM lit test runner for Python 3
+
+
+
 # git_dir_version returns version based on commit and tag history of the Git project
-Version: {{{ git_dir_version lead=1 }}}
+# Example versions:
+# Version: {{{ git_dir_version lead=1 }}}   ->    python3-lit 1.0.git.500.ed195f90f4
+# With:
+#
+#   .git.${commit_count}.${current_commit_short_hash}
+#
+# commit_count is a number of commits from the latest tag to the current commit for the given subpackage.
+# current_commit_short_hash is a short (8-chars long) hash of the current commit.
+Version: {{{ git_dir_version lead="20211020" }}}
 
 # This can be useful later for adding downstream patches
 Release:    1%{?dist}
@@ -23,7 +36,7 @@ URL: https://src.fedoraproject.org/forks/kkleine/rpms/llvm.git
 
 # Detailed information about the source Git repository and the source commit
 # for the created rpm package
-VCS:        {{{ git_dir_vcs }}}
+VCS: {{{ git_cwd_vcs }}}
 
 # git_dir_pack macro places the repository content (the source files) into a tarball
 # and returns its filename. The tarball will be used to build the rpm.
@@ -34,7 +47,7 @@ VCS:        {{{ git_dir_vcs }}}
 # git checkout {{{ cached_git_name_version }}}
 # cd copr/mocks
 # rpkg spec --sources
-Source0: {{{ git_dir_archive }}}
+Source0: {{{ git_cwd_archive }}}
 
 # for file check
 %if %{with check}
@@ -49,7 +62,6 @@ lit is a tool used by the LLVM project for executing its test suites.
 
 %package -n python3-lit
 Summary: LLVM lit test runner for Python 3
-
 Requires: python3-setuptools
 
 %description -n python3-lit
@@ -57,7 +69,7 @@ lit is a tool used by the LLVM project for executing its test suites.
 
 # prep will extract the tarball defined as Source above and descend into it.
 %prep
-{{{ git_dir_setup_macro }}}
+{{{ git_cwd_setup_macro }}}
 
 %build
 %py3_build
