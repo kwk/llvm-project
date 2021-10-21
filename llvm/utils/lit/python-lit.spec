@@ -6,12 +6,10 @@
 %bcond_without check
 
 # git_dir_name returns repository name derived from remote Git repository URL
-Name:       {{{ git_dir_name name="python-lit" }}}
+Name: {{{ git_cwd_name name="python-lit" }}}
 
 # Basic description of the package
 Summary: LLVM lit test runner for Python 3
-
-
 
 # git_dir_version returns version based on commit and tag history of the Git project
 # Example versions:
@@ -22,7 +20,7 @@ Summary: LLVM lit test runner for Python 3
 #
 # commit_count is a number of commits from the latest tag to the current commit for the given subpackage.
 # current_commit_short_hash is a short (8-chars long) hash of the current commit.
-Version: {{{ git_dir_version lead="20211020" }}}
+Version: {{{ git_cwd_version lead="20211020" }}}
 
 # This can be useful later for adding downstream patches
 Release:    1%{?dist}
@@ -58,6 +56,7 @@ BuildRequires: python3-devel
 BuildRequires: python3-setuptools
 
 %description
+{{{ git_commit_time_yyyymmdd }}}
 lit is a tool used by the LLVM project for executing its test suites.
 
 %package -n python3-lit
