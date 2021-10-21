@@ -83,7 +83,7 @@ sed -i -e '1{\@^#!/usr/bin/env python@d}' %{buildroot}%{python3_sitelib}/lit/*.p
 # Finally, changes from the latest release of your application are generated from
 # your project's Git history. It will be empty until you make first annotated Git tag.
 %changelog
-{{{ git_changelog since_tag=FIXME }}}
+{{{ git_changelog since_tag=llvmorg-13.0.0 }}}
 
 * Thu Oct 21 2021 Konrad Kleine <kkleine@redhat.com> - 13.0.0-2
 - Remove python 2 support
