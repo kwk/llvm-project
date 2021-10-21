@@ -6,7 +6,7 @@
 %bcond_without check
 
 # git_dir_name returns repository name derived from remote Git repository URL
-Name: {{{ git_cwd_name name="python-lit" }}}
+Name: {{{ git_name name="python-lit" append="" prepend="" }}}
 
 # Basic description of the package
 Summary: LLVM lit test runner for Python 3
