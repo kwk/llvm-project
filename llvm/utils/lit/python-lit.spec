@@ -3,7 +3,6 @@
 
 # See https://docs.pagure.org/rpkg-util/v3/macro_reference.html#macro-reference-v3
 
-{{{ llvm_snapshot_prefix }}}
 
 %bcond_without check
 
@@ -11,7 +10,7 @@
 Name: {{{ git_name name="python-lit" append="" prepend="" }}}
 
 # Basic description of the package
-Summary: LLVM lit test runner for Python 3
+Summary: LLVM lit test runner for Python 3 {{{ git_version name="llvmorg" }}}
 
 # git_dir_version returns version based on commit and tag history of the Git project
 # Example versions:
