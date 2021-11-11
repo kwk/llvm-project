@@ -7,7 +7,7 @@
 %bcond_without check
 
 # git_dir_name returns repository name derived from remote Git repository URL
-Name: {{{ git_name name="python-lit" append="" prepend="" }}}
+Name: python-lit
 
 # Basic description of the package
 Summary: LLVM lit test runner for Python 3 {{{ git_version name="llvmorg" }}}
@@ -21,7 +21,7 @@ Summary: LLVM lit test runner for Python 3 {{{ git_version name="llvmorg" }}}
 #
 # commit_count is a number of commits from the latest tag to the current commit for the given subpackage.
 # current_commit_short_hash is a short (8-chars long) hash of the current commit.
-Version: {{{ llvm_snapshot_version }}}
+Version: 1.0.0
 
 
 # This can be useful later for adding downstream patches
