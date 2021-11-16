@@ -219,7 +219,23 @@ set(GCC_INSTALL_PREFIX "" CACHE PATH "Directory where gcc is installed." )
 set(DEFAULT_SYSROOT "" CACHE STRING
   "Default <path> to all compiler invocations for --sysroot=<path>." )
 
-set(ENABLE_LINKER_BUILD_ID OFF CACHE BOOL "pass --build-id to ld")
+set(ENABLE_LINKER_BUILD_ID OFF CACHE BOOL
+  "Pass --build-id or --build-id=<style> to linker (e.g. ld or lld). See also ENABLE_LINKER_BUILD_ID_STYLE.")
+
+set(DEFAULT_LINKER_BUILD_ID_STYLE "" CACHE STRING
+  "enables ENABLE_LINKER_BUILD_ID (if not already done) and passes the style to --build-id=<style>")
+
+if (NOT(DEFAULT_LINKER_BUILD_ID_STYLE STREQUAL ""))
+  if (NOT(ENABLE_LINKER_BUILD_ID))
+    message(WARNING "Turning on ENABLE_LINKER_BUILD_ID because DEFAULT_LINKER_BUILD_ID_STYLE style was specified")
+    set(ENABLE_LINKER_BUILD_ID ON)
+  endif()
+  if (NOT("${DEFAULT_LINKER_BUILD_ID_STYLE}" MATCHES "^(fast|md5|sha1|uuid|0x[0-9A-Fa-f]+)$"))
+    message(WARNING "Allowed values for DEFAULT_LINKER_BUILD_ID_STYLE are "
+"\"sha1\", \"md5\" or \"uuid\", \"fast\", \"0x<hexstring>\" "
+"but the current value is: ${DEFAULT_LINKER_BUILD_ID_STYLE}")
+  endif()
+endif()  
 
 set(ENABLE_X86_RELAX_RELOCATIONS ON CACHE BOOL
     "enable x86 relax relocations by default")

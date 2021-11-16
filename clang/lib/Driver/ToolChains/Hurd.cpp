@@ -82,7 +82,11 @@ Hurd::Hurd(const Driver &D, const llvm::Triple &Triple, const ArgList &Args)
   const std::string MultiarchTriple = getMultiarchTriple(D, Triple, SysRoot);
 
 #ifdef ENABLE_LINKER_BUILD_ID
-  ExtraOpts.push_back("--build-id");
+  #ifdef ENABLE_LINKER_BUILD_ID_STYLE
+    ExtraOpts.push_back("--build-id=" ENABLE_LINKER_BUILD_ID_STYLE);
+  #else
+    ExtraOpts.push_back("--build-id");
+  #endif
 #endif
 
   Generic_GCC::AddMultilibPaths(D, SysRoot, OSLibDir, MultiarchTriple, Paths);

@@ -69,8 +69,11 @@
 /* Linker version detected at compile time. */
 #cmakedefine HOST_LINK_VERSION "${HOST_LINK_VERSION}"
 
-/* pass --build-id to ld */
+/* Pass --build-id or --build-id=<style> to linker (e.g. ld or lld) by default */
 #cmakedefine ENABLE_LINKER_BUILD_ID
+
+/* Set --build-id=<style> */
+#cmakedefine DEFAULT_LINKER_BUILD_ID_STYLE "${DEFAULT_LINKER_BUILD_ID_STYLE}"
 
 /* enable x86 relax relocations by default */
 #cmakedefine01 ENABLE_X86_RELAX_RELOCATIONS

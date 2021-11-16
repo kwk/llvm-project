@@ -245,7 +245,11 @@ Linux::Linux(const Driver &D, const llvm::Triple &Triple, const ArgList &Args)
   }
 
 #ifdef ENABLE_LINKER_BUILD_ID
-  ExtraOpts.push_back("--build-id");
+  #ifdef ENABLE_LINKER_BUILD_ID_STYLE
+    ExtraOpts.push_back("--build-id=" ENABLE_LINKER_BUILD_ID_STYLE);
+  #else
+    ExtraOpts.push_back("--build-id");
+  #endif
 #endif
 
   if (IsAndroid || Distro.IsOpenSUSE())
