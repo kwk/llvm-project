@@ -2310,6 +2310,27 @@ the configuration (without a prefix: ``Auto``).
       };
 
 
+**EmptyLineAfterFunctionDefinition** (``EmptyLineAfterFunctionDefinitionStyle``) :versionbadge:`clang-format 14`
+  Defines when to put an empty line after a function definition.
+
+  Possible values:
+
+  * ``ELAFDS_Leave`` (in configuration: ``Leave``)
+    Keep existing empty lines after function definition.
+    MaxEmptyLinesToKeep is applied instead.
+
+  * ``ELAFDS_Always`` (in configuration: ``Always``)
+    Always add empty line after function definition if there are none.
+    MaxEmptyLinesToKeep is applied also.
+
+    .. code-block:: c++
+
+      void one() {}
+      
+      void two() {}
+      
+      void three() {}
+
 
 **ExperimentalAutoDetectBinPacking** (``Boolean``) :versionbadge:`clang-format 3.7`
   If ``true``, clang-format detects whether function calls and
