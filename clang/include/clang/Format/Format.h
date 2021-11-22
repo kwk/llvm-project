@@ -2168,6 +2168,27 @@ struct FormatStyle {
   /// \version 13
   EmptyLineBeforeAccessModifierStyle EmptyLineBeforeAccessModifier;
 
+  /// Different styles for empty line after function definitions.
+  enum EmptyLineAfterFunctionDefinitionStyle : unsigned char {
+    /// Keep existing empty lines after function definition.
+    /// MaxEmptyLinesToKeep is applied instead.
+    ELAFDS_Leave,
+    /// Always add empty line after function modifiers if there are none.
+    /// MaxEmptyLinesToKeep is applied also.
+    /// \code
+    ///   void one() {}
+    ///
+    ///   void two() {}
+    ///
+    ///   void three() {}
+    /// \endcode
+    ELAFDS_Always,
+  };
+
+  /// Defines when to put an empty line after a function definition.
+  /// \version 14
+  EmptyLineAfterFunctionDefinitionStyle EmptyLineAfterFunctionDefinition;
+
   /// If ``true``, clang-format detects whether function calls and
   /// definitions are formatted with one parameter per line.
   ///
@@ -3738,6 +3759,7 @@ struct FormatStyle {
            DisableFormat == R.DisableFormat &&
            EmptyLineAfterAccessModifier == R.EmptyLineAfterAccessModifier &&
            EmptyLineBeforeAccessModifier == R.EmptyLineBeforeAccessModifier &&
+           EmptyLineAfterFunctionDefinition == R.EmptyLineAfterFunctionDefinition &&
            ExperimentalAutoDetectBinPacking ==
                R.ExperimentalAutoDetectBinPacking &&
            PackConstructorInitializers == R.PackConstructorInitializers &&

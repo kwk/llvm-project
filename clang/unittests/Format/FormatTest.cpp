@@ -11127,6 +11127,308 @@ TEST_F(FormatTest, FormatsAfterAndBeforeAccessModifiersInteraction) {
                Style);
 }
 
+TEST_F(FormatTest, FormatsEmptyLineAfterFunctionDefinition) {
+
+  FormatStyle Style = getLLVMStyle();
+  EXPECT_EQ(Style.EmptyLineAfterFunctionDefinition, FormatStyle::ELAFDS_Leave);
+  // verifyFormat("void one() {}\n"
+  //              "\n"
+  //              "void two() {}\n"
+  //              "void three() {}\n",
+  //              Style);
+
+  // // Check if lines are removed.
+  // verifyFormat("void one() {}\n"
+  //              "void two() {}\n"
+  //              "void three() {}\n",
+  //              "void one() {}\n"
+  //              "\n"
+  //              "void two() {}\n"
+  //              "void three() {}\n",
+  //              Style);
+
+  Style.EmptyLineAfterFunctionDefinition = FormatStyle::ELAFDS_Always;
+  verifyFormat("void one() {}\n"
+               "\n"
+               "void two() {}\n"
+               "\n"
+               "void three() {}\n"
+               "\n",
+               Style);
+
+  // Check if lines are added.
+  verifyFormat("void one() {}\n"
+               "\n"
+               "void two() {}\n"
+               "\n"
+               "void three() {}\n"
+               "\n",
+               "void one() {}\n"
+               "void two() {}\n"
+               "void three() {}\n",
+               Style);
+
+  // // Leave tests rely on the code layout, test::messUp can not be used.
+  // Style.EmptyLineAfterAccessModifier = FormatStyle::ELAAMS_Leave;
+  // Style.MaxEmptyLinesToKeep = 0u;
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private:\n"
+  //              "  int i;\n"
+  //              "\n"
+  //              "protected:\n"
+  //              "  int j;\n"
+  //              "};\n",
+  //              Style);
+
+  // // Check if MaxEmptyLinesToKeep is respected.
+  // EXPECT_EQ("struct foo {\n"
+  //           "private:\n"
+  //           "  void f() {}\n"
+  //           "\n"
+  //           "private:\n"
+  //           "  int i;\n"
+  //           "\n"
+  //           "protected:\n"
+  //           "  int j;\n"
+  //           "};\n",
+  //           format("struct foo {\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  void f() {}\n"
+  //                  "\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  int i;\n"
+  //                  "\n"
+  //                  "protected:\n"
+  //                  "\n\n\n"
+  //                  "  int j;\n"
+  //                  "};\n",
+  //                  Style));
+
+  // Style.MaxEmptyLinesToKeep = 1u;
+  // EXPECT_EQ("struct foo {\n"
+  //           "private:\n"
+  //           "\n"
+  //           "  void f() {}\n"
+  //           "\n"
+  //           "private:\n"
+  //           "\n"
+  //           "  int i;\n"
+  //           "\n"
+  //           "protected:\n"
+  //           "\n"
+  //           "  int j;\n"
+  //           "};\n",
+  //           format("struct foo {\n"
+  //                  "private:\n"
+  //                  "\n"
+  //                  "  void f() {}\n"
+  //                  "\n"
+  //                  "private:\n"
+  //                  "\n"
+  //                  "  int i;\n"
+  //                  "\n"
+  //                  "protected:\n"
+  //                  "\n"
+  //                  "  int j;\n"
+  //                  "};\n",
+  //                  Style));
+  // // Check if no lines are kept.
+  // EXPECT_EQ("struct foo {\n"
+  //           "private:\n"
+  //           "  void f() {}\n"
+  //           "\n"
+  //           "private:\n"
+  //           "  int i;\n"
+  //           "\n"
+  //           "protected:\n"
+  //           "  int j;\n"
+  //           "};\n",
+  //           format("struct foo {\n"
+  //                  "private:\n"
+  //                  "  void f() {}\n"
+  //                  "\n"
+  //                  "private:\n"
+  //                  "  int i;\n"
+  //                  "\n"
+  //                  "protected:\n"
+  //                  "  int j;\n"
+  //                  "};\n",
+  //                  Style));
+  // // Check if MaxEmptyLinesToKeep is respected.
+  // EXPECT_EQ("struct foo {\n"
+  //           "private:\n"
+  //           "\n"
+  //           "  void f() {}\n"
+  //           "\n"
+  //           "private:\n"
+  //           "\n"
+  //           "  int i;\n"
+  //           "\n"
+  //           "protected:\n"
+  //           "\n"
+  //           "  int j;\n"
+  //           "};\n",
+  //           format("struct foo {\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  void f() {}\n"
+  //                  "\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  int i;\n"
+  //                  "\n"
+  //                  "protected:\n"
+  //                  "\n\n\n"
+  //                  "  int j;\n"
+  //                  "};\n",
+  //                  Style));
+
+  // Style.MaxEmptyLinesToKeep = 10u;
+  // EXPECT_EQ("struct foo {\n"
+  //           "private:\n"
+  //           "\n\n\n"
+  //           "  void f() {}\n"
+  //           "\n"
+  //           "private:\n"
+  //           "\n\n\n"
+  //           "  int i;\n"
+  //           "\n"
+  //           "protected:\n"
+  //           "\n\n\n"
+  //           "  int j;\n"
+  //           "};\n",
+  //           format("struct foo {\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  void f() {}\n"
+  //                  "\n"
+  //                  "private:\n"
+  //                  "\n\n\n"
+  //                  "  int i;\n"
+  //                  "\n"
+  //                  "protected:\n"
+  //                  "\n\n\n"
+  //                  "  int j;\n"
+  //                  "};\n",
+  //                  Style));
+
+  // // Test with comments.
+  // Style = getLLVMStyle();
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              Style);
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              "struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              Style);
+
+  // Style.EmptyLineAfterAccessModifier = FormatStyle::ELAAMS_Always;
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              "struct foo {\n"
+  //              "private:\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              Style);
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "  // comment\n"
+  //              "  void f() {}\n"
+  //              "\n"
+  //              "private: /* comment */\n"
+  //              "\n"
+  //              "  int i;\n"
+  //              "};\n",
+  //              Style);
+
+  // // Test with preprocessor defines.
+  // Style = getLLVMStyle();
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              Style);
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              "struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              Style);
+
+  // Style.EmptyLineAfterAccessModifier = FormatStyle::ELAAMS_Always;
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              "struct foo {\n"
+  //              "private:\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              Style);
+  // verifyFormat("struct foo {\n"
+  //              "private:\n"
+  //              "\n"
+  //              "#ifdef FOO\n"
+  //              "#endif\n"
+  //              "  void f() {}\n"
+  //              "};\n",
+  //              Style);
+}
+
 TEST_F(FormatTest, FormatsArrays) {
   verifyFormat("aaaaaaaaaaaaaaaaaaaaaaaaa[aaaaaaaaaaaaaaaaaaaaaaaaa]\n"
                "                         [bbbbbbbbbbbbbbbbbbbbbbbbb] = c;");

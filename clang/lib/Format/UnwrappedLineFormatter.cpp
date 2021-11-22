@@ -1334,6 +1334,18 @@ void UnwrappedLineFormatter::formatFirstToken(
     }
   }
 
+  if (PreviousLine && PreviousLine->mightBeFunctionDefinition() &&
+      (!PreviousLine->InPPDirective || !RootToken.HasUnescapedNewline)) {
+     switch (Style.EmptyLineAfterFunctionDefinition) {
+      case FormatStyle::ELAFDS_Leave:
+        Newlines = std::max(Newlines, 1u);
+        break;
+      case FormatStyle::ELAFDS_Always:
+        Newlines = std::max(Newlines, 2u);
+        break;
+      }
+  }
+
   if (Newlines)
     Indent = NewlineIndent;
 

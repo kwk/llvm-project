@@ -309,6 +309,17 @@ struct ScalarEnumerationTraits<
 };
 
 template <>
+struct ScalarEnumerationTraits<
+    FormatStyle::EmptyLineAfterFunctionDefinitionStyle> {
+  static void
+  enumeration(IO &IO, 
+              FormatStyle::EmptyLineAfterFunctionDefinitionStyle &Value) {
+    IO.enumCase(Value, "Leave", FormatStyle::ELAFDS_Leave);
+    IO.enumCase(Value, "Always", FormatStyle::ELAFDS_Always);
+  }
+};
+
+template <>
 struct ScalarEnumerationTraits<FormatStyle::PPDirectiveIndentStyle> {
   static void enumeration(IO &IO, FormatStyle::PPDirectiveIndentStyle &Value) {
     IO.enumCase(Value, "None", FormatStyle::PPDIS_None);
@@ -675,6 +686,8 @@ template <> struct MappingTraits<FormatStyle> {
                    Style.EmptyLineAfterAccessModifier);
     IO.mapOptional("EmptyLineBeforeAccessModifier",
                    Style.EmptyLineBeforeAccessModifier);
+    IO.mapOptional("EmptyLineAfterFunctionDefinition",
+                   Style.EmptyLineAfterFunctionDefinition);
     IO.mapOptional("ExperimentalAutoDetectBinPacking",
                    Style.ExperimentalAutoDetectBinPacking);
 
@@ -1156,6 +1169,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.DerivePointerAlignment = false;
   LLVMStyle.EmptyLineAfterAccessModifier = FormatStyle::ELAAMS_Never;
   LLVMStyle.EmptyLineBeforeAccessModifier = FormatStyle::ELBAMS_LogicalBlock;
+  LLVMStyle.EmptyLineAfterFunctionDefinition = FormatStyle::ELAFDS_Leave;
   LLVMStyle.ExperimentalAutoDetectBinPacking = false;
   LLVMStyle.PackConstructorInitializers = FormatStyle::PCIS_BinPack;
   LLVMStyle.FixNamespaceComments = true;
