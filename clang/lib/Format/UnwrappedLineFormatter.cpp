@@ -1334,17 +1334,55 @@ void UnwrappedLineFormatter::formatFirstToken(
     }
   }
 
-  if (PreviousLine && PreviousLine->mightBeFunctionDefinition() &&
-      (!PreviousLine->InPPDirective || !RootToken.HasUnescapedNewline)) {
-     switch (Style.EmptyLineAfterFunctionDefinition) {
-      case FormatStyle::ELAFDS_Leave:
-        Newlines = std::max(Newlines, 1u);
-        break;
-      case FormatStyle::ELAFDS_Always:
-        Newlines = std::max(Newlines, 2u);
-        break;
-      }
+  if (PreviousLine && PreviousLine->First->is(tok::comment)) {
+    // If the previous line is a comment, we need to make sure that we do not
+    // introduce trailing whitespace.
+    if (RootToken.HasUnescapedNewline)
+      Newlines = 0;
+    else
+      Newlines = 1;
   }
+
+  // if (
+  //     // (PreviousLine && PreviousLine->MightBeFunctionDecl &&
+  //     // !PreviousLine->endsWith(tok::l_brace) &&
+  //     //     (!PreviousLine->InPPDirective || !RootToken.HasUnescapedNewline))
+  //     //     ||
+  //     // (Line.MightBeFunctionDecl && PreviousLine->First->getPreviousNonComment)
+  //     // ||
+  //     (
+  //       PreviousLine
+  //       && Line.First->NewlinesBefore < 2
+  //       && (
+  //         PreviousLine->Last
+  //         && (
+  //             // first definition within a class/struct
+  //             !PreviousLine->Last->is(tok::l_brace)
+  //             || (
+  //               // if { has a comment after it
+  //               PreviousLine->endsWith(tok::comment)
+  //               && PreviousLine->Last->getPreviousNonComment()
+  //               && !PreviousLine->Last->getPreviousNonComment()->is(tok::l_brace)
+  //             )
+  //         )
+  //     )
+  //     &&
+  //     // inspect if we ...
+  //     ( Line.MightBeFunctionDecl
+  //       || Line.startsWith(tok::kw_class)
+  //       || Line.startsWith(tok::kw_struct)
+  //       || Line.startsWith(tok::kw_template)
+  //       || Line.startsWith(tok::kw_namespace)
+  //     ))) {
+  //   switch (Style.EmptyLineAfterFunctionDefinition) {
+  //   case FormatStyle::ELAFDS_Leave:
+  //     Newlines = std::max(Newlines, 1u);
+  //     break;
+  //   case FormatStyle::ELAFDS_Always:
+  //     Newlines = std::max(Newlines, 2u);
+  //     break;
+  //   }
+  // }
 
   if (Newlines)
     Indent = NewlineIndent;

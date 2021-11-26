@@ -19045,6 +19045,12 @@ TEST_F(FormatTest, ParsesConfiguration) {
   CHECK_PARSE("EmptyLineBeforeAccessModifier: Always",
               EmptyLineBeforeAccessModifier, FormatStyle::ELBAMS_Always);
 
+  Style.EmptyLineAfterFunctionDefinition = FormatStyle::ELAFDS_Always;
+  CHECK_PARSE("EmptyLineAfterFunctionDefinition: Always",
+              EmptyLineAfterFunctionDefinition, FormatStyle::ELAFDS_Always);
+  CHECK_PARSE("EmptyLineAfterFunctionDefinition: Leave",
+              EmptyLineBeforeAccessModifier, FormatStyle::ELAFDS_Leave);
+
   Style.AlignAfterOpenBracket = FormatStyle::BAS_AlwaysBreak;
   CHECK_PARSE("AlignAfterOpenBracket: Align", AlignAfterOpenBracket,
               FormatStyle::BAS_Align);
