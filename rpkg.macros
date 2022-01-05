@@ -57,7 +57,7 @@ cat <<EOF
 
 # This prints a multiline string for the changelog entry
 %{lua: function _llvm_snapshot_changelog_entry()
-    assert(os.setlocale('en_US'))
+    assert(os.setlocale('C'))
     print(string.format("* %s LLVM snapshot - %s\n", os.date("%a %b %d %Y"), rpm.expand("%version")))
     print("- This is an automated snapshot build")
     -- TODO(kkleine): Switch to rpm.isdefined() once it is available on copr builders
