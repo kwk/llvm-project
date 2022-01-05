@@ -12,7 +12,7 @@
 Name: python-lit
 
 # Basic description of the package
-Summary: LLVM lit test runner for Python 3 llvm_git_upstream_ref={{{llvm_git_upstream_ref}}} show_pwd={{{show_pwd}}} llvm_release={{{llvm_release}}}
+Summary: Tool for executing llvm test suites
 Version: %{llvm_snapshot_version}~%{llvm_snapshot_version_suffix}
 
 
