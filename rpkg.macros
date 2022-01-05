@@ -95,7 +95,3 @@ end}
 ################################################################################
 EOF
 }
-
-# function llvm_snapshot_version {
-#     echo "%{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}pre%{llvm_snapshot_yyyymmdd}.g%{llvm_snapshot_git_revision_short}"
-# }
