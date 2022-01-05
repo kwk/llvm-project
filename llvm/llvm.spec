@@ -1,3 +1,5 @@
+{{{llvm_snapshot_prefix}}}
+
 # Components enabled if supported by target architecture:
 %define gold_arches %{ix86} x86_64 %{arm} aarch64 %{power64} s390x
 %ifarch %{gold_arches}
@@ -12,9 +14,9 @@
 %global llvm_libdir %{_libdir}/%{name}
 %global build_llvm_libdir %{buildroot}%{llvm_libdir}
 #global rc_ver 4
-%global maj_ver 13
-%global min_ver 0
-%global patch_ver 0
+%global maj_ver {{{llvm_snapshot_version_major}}}
+%global min_ver {{{llvm_snapshot_version_minor}}}
+%global patch_ver {{{llvm_snapshot_version_patch}}}
 %if !%{maj_ver} && 0%{?rc_ver}
 %global abi_revision 2
 %endif
@@ -69,19 +71,12 @@ Summary:	The Low Level Virtual Machine
 
 License:	NCSA
 URL:		http://llvm.org
-Source0:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{maj_ver}.%{min_ver}.%{patch_ver}%{?rc_ver:-rc%{rc_ver}}/%{llvm_srcdir}.tar.xz
-Source1:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{maj_ver}.%{min_ver}.%{patch_ver}%{?rc_ver:-rc%{rc_ver}}/%{llvm_srcdir}.tar.xz.sig
-Source2:	tstellar-gpg-key.asc
+Source0:	{{{git_cwd_archive}}}
 
 %if %{without compat_build}
 Source3:	run-lit-tests
 Source4:	lit.fedora.cfg.py
 %endif
-
-%if 0%{?abi_revision}
-Patch0:		0001-cmake-Allow-shared-libraries-to-customize-the-soname.patch
-%endif
-Patch2:		0001-XFAIL-missing-abstract-variable.ll-test-on-ppc64le.patch
 
 BuildRequires:	gcc
 BuildRequires:	gcc-c++
@@ -193,8 +188,8 @@ LLVM's modified googletest sources.
 %endif
 
 %prep
-%{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
-%autosetup -n %{llvm_srcdir} -p2
+# prep will extract the tarball defined as Source above and descend into it.
+{{{ git_cwd_setup_macro }}}
 
 %py3_shebang_fix \
 	test/BugPoint/compile-custom.ll.py \
