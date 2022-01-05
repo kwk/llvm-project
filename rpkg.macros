@@ -10,25 +10,10 @@ function llvm_git_upstream_ref {
     echo -n $(git rev-parse HEAD)
 }
 
-function show_pwd {
-    echo $PWD
-}
-
 function llvm_release {
     git_ref=$(llvm_git_upstream_ref)
     echo -n $(git show $git_ref:llvm/CMakeLists.txt | grep -ioP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' | paste -sd '.')
 }
-
-function git_commit_time_yyyymmdd {
-    local commit_timestamp=$(git --no-pager log -1 --format="%ct")
-    echo -n $(date +%Y%m%d --date=@${commit_timestamp})
-}
-
-function git_author_time_yyyymmdd {
-    local commit_timestamp=$(git --no-pager log -1 --format="%at")
-    echo -n $(date +%Y%m%d --date=@${commit_timestamp})
-}
-
 function llvm_snapshot_prefix {
     local yyyymmdd="$(date +%Y%m%d)"
     local llvm_version=$(llvm_release)
@@ -72,16 +57,12 @@ cat <<EOF
 
 # This prints a multiline string for the changelog entry
 %{lua: function _llvm_snapshot_changelog_entry()
-    print("* ")
-    print(os.date("%a %b %d %Y"))
-    print(" LLVM snapshot - ")
-    print(rpm.expand("%version"))
-    print("\n")
-    print("- This is an automated snapshot build ")
+    assert(os.setlocale('en_US'))
+    print(string.format("* %s LLVM snapshot - %s\n", os.date("%a %b %d %Y"), rpm.expand("%version")))
+    print("- This is an automated snapshot build")
+    -- TODO(kkleine): Switch to rpm.isdefined() once it is available on copr builders
     if rpm.expand("%copr_build_link") ~= "%copr_build_link" then
-        print(" (")
-        print(rpm.expand("%copr_build_link"))
-        print(")")
+        print(string.format(" (%s)", rpm.expand("%copr_build_link")))
     end
     print("\n\n")
 end}
