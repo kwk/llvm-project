@@ -104,12 +104,6 @@ Source3:	run-lit-tests
 Source4:	lit.fedora.cfg.py
 %endif
 
-%if 0%{?abi_revision}
-Patch0:		0003-PATCH-cmake-Allow-shared-libraries-to-customize-the-.patch
-%endif
-Patch2:		0001-PATCH-llvm-Make-source-interleave-prefix-test-case-c.patch
-Patch3:		0002-PATCH-XFAIL-missing-abstract-variable.ll-test-on-ppc.patch
-
 BuildRequires:	gcc
 BuildRequires:	gcc-c++
 BuildRequires:	clang
