@@ -225,7 +225,7 @@ LLVM's modified googletest sources.
 %{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
 %endif
 # prep will extract the tarball defined as Source above and descend into it.
-{{{ git_repo_setup_macro }}}
+{{{ git_repo_setup_macro path=llvm }}}
 
 
 %py3_shebang_fix \
