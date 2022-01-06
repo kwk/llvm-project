@@ -7,7 +7,13 @@
 function llvm_git_upstream_ref {
     # TODO(kwk): Define an "upstream" tag that gets used to distringuish between
     # the current upstream and downstream git ref.
-    echo -n $(git rev-parse HEAD)
+    #echo -n $(git rev-parse HEAD)
+    
+    # This is the upstream commit upon which the downstream is currently based.
+    # We need this in order to have the same package version for all LLVM
+    # packages even when we add downstream patches.
+    # TODO(kkleine): find a way to determine this automatically
+    echo -n 9cbe000df269117905ee68a87800f1d96cfb9885
 }
 
 function llvm_release {
