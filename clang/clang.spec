@@ -9,15 +9,8 @@
 #global rc_ver 4
 %global clang_version %{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}
 
-%global clang_srcdir clang-%{version}%{?rc_ver:rc%{rc_ver}}.src
-%global clang_tools_srcdir clang-tools-extra-%{version}%{?rc_ver:rc%{rc_ver}}.src
-
 %if %{with snapshot_build}
 %undefine rc_ver
-%global clang_srcdir clang-%{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}.src
-%global clang_tools_srcdir clang-tools-extra-%{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}.src
-
-%global clang_version %{llvm_snapshot_version}
 %endif
 
 %global clang_tools_binaries \
@@ -76,8 +69,6 @@
 %global _smp_mflags -j8
 %endif
 
-%global clang_srcdir clang-%{clang_version}%{?rc_ver:rc%{rc_ver}}.src
-%global clang_tools_srcdir clang-tools-extra-%{clang_version}%{?rc_ver:rc%{rc_ver}}.src
 
 %if !%{maj_ver} && 0%{?rc_ver}
 %global abi_revision 2
@@ -90,21 +81,10 @@ Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
-%if %{with snapshot_build}
-Source0: {{{git_cwd_archive}}}
-%else
-Source0:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_srcdir}.tar.xz
-Source3:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_srcdir}.tar.xz.sig
+Source0:	{{{git_cwd_archive}}}
+Source1:	{{{git_archive path="../clang-tools-extra" }}}
 %if %{without compat_build}
-Source1:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_tools_srcdir}.tar.xz
-Source2:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_tools_srcdir}.tar.xz.sig
-%endif
-%endif
-%if %{without snapshot_build}
-Source4:	tstellar-gpg-key.asc
-%endif
-%if %{without compat_build}
-Source5:	macros.%{name}
+Source2:	macros.%{name}	
 %endif
 
 # Patches for clang
@@ -278,20 +258,13 @@ Requires:      python3
 
 
 %prep
-%if %{without snapshot_build}
-%{gpgverify} --keyring='%{SOURCE4}' --signature='%{SOURCE3}' --data='%{SOURCE0}'
-%endif
-
 %if %{with compat_build}
+# TODO(kkleine): compat build not adapted yet
 %autosetup -n %{clang_srcdir} -p2
 %else
 
-%if %{without snapshot_build}
-%{gpgverify} --keyring='%{SOURCE4}' --signature='%{SOURCE2}' --data='%{SOURCE1}'
-%endif
-
-# prep will extract the tarball defined as Source above and descend into it.
-{{{ git_cwd_setup_macro }}}
+# Setup clang-tools-extra (see Source1 tag above)
+{{{ git_cwd_setup_macro source_indices=1 }}}
 
 # failing test case
 rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
@@ -300,7 +273,8 @@ rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
 	clang-tidy/tool/ \
 	clang-include-fixer/find-all-symbols/tool/run-find-all-symbols.py
 
-
+# Setup clang (see Source0 tag above)
+{{{ git_cwd_setup_macro source_indices=0 }}}
 
 # failing test case
 rm test/CodeGen/profile-filter.c
