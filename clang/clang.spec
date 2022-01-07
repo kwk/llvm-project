@@ -81,8 +81,8 @@ Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
-Source0:	{{{git_cwd_archive}}}
-Source1:	{{{git_archive path="../clang-tools-extra" }}}
+Source0:	{{{git_dir_pack}}}
+Source1:	{{{git_dir_pack name=clang-tools-extra}}}
 %if %{without compat_build}
 Source2:	macros.%{name}	
 %endif
