@@ -108,8 +108,9 @@ Source5:	macros.%{name}
 %endif
 
 # Patches for clang
-Patch4:		0005-PATCH-clang-Prefer-gcc-toolchains-with-libgcc_s.so-w.patch
-Patch5:		0006-PATCH-Driver-Add-a-gcc-equivalent-triple-to-the-list.patch
+
+# NOTE: They should all be managed in git except for when you need to apply
+# patches conditionally.
 
 BuildRequires:	gcc
 BuildRequires:	gcc-c++
