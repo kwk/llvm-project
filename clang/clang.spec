@@ -400,7 +400,7 @@ rm -Rf %{buildroot}%{install_prefix}/libexec
 # File in the macros file for other packages to use.  We are not doing this
 # in the compat package, because the version macros would # conflict with
 # eachother if both clang and the clang compat package were installed together.
-install -p -m0644 -D %{SOURCE5} %{buildroot}%{_rpmmacrodir}/macros.%{name}
+install -p -m0644 -D %{SOURCE2} %{buildroot}%{_rpmmacrodir}/macros.%{name}
 sed -i -e "s|@@CLANG_MAJOR_VERSION@@|%{maj_ver}|" \
        -e "s|@@CLANG_MINOR_VERSION@@|%{min_ver}|" \
        -e "s|@@CLANG_PATCH_VERSION@@|%{patch_ver}|" \
