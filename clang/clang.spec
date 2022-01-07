@@ -1,11 +1,13 @@
+{{{llvm_snapshot_prefix}}}
+
 %bcond_with compat_build
 %bcond_without check
 
-%global maj_ver 13
-%global min_ver 0
-%global patch_ver 0
+%global maj_ver %{llvm_snapshot_version_major}
+%global min_ver %{llvm_snapshot_version_minor}
+%global patch_ver %{llvm_snapshot_version_patch}
 #global rc_ver 4
-%global clang_version %{maj_ver}.%{min_ver}.%{patch_ver}
+%global clang_version %{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}
 
 %global clang_srcdir clang-%{version}%{?rc_ver:rc%{rc_ver}}.src
 %global clang_tools_srcdir clang-tools-extra-%{version}%{?rc_ver:rc%{rc_ver}}.src
@@ -14,10 +16,8 @@
 %undefine rc_ver
 %global clang_srcdir clang-%{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}.src
 %global clang_tools_srcdir clang-tools-extra-%{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}.src
-%global maj_ver %{llvm_snapshot_version_major}
-%global min_ver %{llvm_snapshot_version_minor}
-%global patch_ver %{llvm_snapshot_version_patch}
-%global clang_version %{llvm_snapshot_version_major}.%{llvm_snapshot_version_minor}.%{llvm_snapshot_version_patch}
+
+%global clang_version %{llvm_snapshot_version}
 %endif
 
 %global clang_tools_binaries \
@@ -91,8 +91,7 @@ Summary:	A C language family front-end for LLVM
 License:	NCSA
 URL:		http://llvm.org
 %if %{with snapshot_build}
-Source0:    %{llvm_snapshot_source_prefix}clang-%{llvm_snapshot_yyyymmdd}.src.tar.xz
-Source1:    %{llvm_snapshot_source_prefix}clang-tools-extra-%{llvm_snapshot_yyyymmdd}.src.tar.xz
+Source0: {{{git_cwd_archive}}}
 %else
 Source0:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_srcdir}.tar.xz
 Source3:	https://github.com/llvm/llvm-project/releases/download/llvmorg-%{clang_version}%{?rc_ver:-rc%{rc_ver}}/%{clang_srcdir}.tar.xz.sig
@@ -109,10 +108,6 @@ Source5:	macros.%{name}
 %endif
 
 # Patches for clang
-Patch0:		0001-PATCH-clang-Reorganize-gtest-integration.patch
-Patch1:		0002-PATCH-clang-ToolChain-Add-lgcc_s-to-the-linker-flags.patch
-Patch2:		0003-PATCH-clang-Make-funwind-tables-the-default-on-all-a.patch
-Patch3:		0004-PATCH-clang-Don-t-install-static-libraries.patch
 Patch4:		0005-PATCH-clang-Prefer-gcc-toolchains-with-libgcc_s.so-w.patch
 Patch5:		0006-PATCH-Driver-Add-a-gcc-equivalent-triple-to-the-list.patch
 
@@ -290,11 +285,12 @@ Requires:      python3
 %autosetup -n %{clang_srcdir} -p2
 %else
 
-%if ! %{with snapshot_build}
+%if %{without snapshot_build}
 %{gpgverify} --keyring='%{SOURCE4}' --signature='%{SOURCE2}' --data='%{SOURCE1}'
 %endif
-%setup -T -q -b 1 -n %{clang_tools_srcdir}
-%autopatch -m200 -p2
+
+# prep will extract the tarball defined as Source above and descend into it.
+{{{ git_cwd_setup_macro }}}
 
 # failing test case
 rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
@@ -303,8 +299,7 @@ rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
 	clang-tidy/tool/ \
 	clang-include-fixer/find-all-symbols/tool/run-find-all-symbols.py
 
-%setup -q -n %{clang_srcdir}
-%autopatch -M200 -p2
+
 
 # failing test case
 rm test/CodeGen/profile-filter.c
