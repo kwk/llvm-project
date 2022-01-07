@@ -81,8 +81,12 @@ Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
-Source0:	{{{git_dir_pack}}}
-Source1:	{{{git_dir_pack name=clang-tools-extra}}}
+# TODO(kkleine): One can omit the source_name. In fact omitting it will have the
+# benefit of having the revision included and an optional -dirty suffix.
+# NOTE: The dir_name is needed because we reference it in the git_setup_macro
+# below.
+Source0:	{{{git_pack path="$PWD" dir_name="clang" source_name="clang.tar.xz"}}}
+Source1:	{{{git_pack path="$PWD/../clang-tools-extra" dir_name="clang-tools-extra" source_name="clang-tools-extra.tar.xz"}}}
 %if %{without compat_build}
 Source2:	macros.%{name}	
 %endif
@@ -264,7 +268,7 @@ Requires:      python3
 %else
 
 # Setup clang-tools-extra (see Source1 tag above)
-{{{ git_cwd_setup_macro source_indices=1 }}}
+{{{ git_setup_macro path=. source_indices=1 dir_name=clang-tools-extra }}}
 
 # failing test case
 rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
@@ -274,7 +278,7 @@ rm test/clang-tidy/checkers/altera-struct-pack-align.cpp
 	clang-include-fixer/find-all-symbols/tool/run-find-all-symbols.py
 
 # Setup clang (see Source0 tag above)
-{{{ git_cwd_setup_macro source_indices=0 }}}
+{{{ git_setup_macro path=. source_indices=0 dir_name=clang}}}
 
 # failing test case
 rm test/CodeGen/profile-filter.c
