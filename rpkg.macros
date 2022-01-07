@@ -21,7 +21,9 @@ function llvm_release {
     echo -n $(git show $git_ref:llvm/CMakeLists.txt | grep -ioP 'set\(\s*LLVM_VERSION_(MAJOR|MINOR|PATCH)\s\K[0-9]+' | paste -sd '.')
 }
 function llvm_snapshot_prefix {
-    local yyyymmdd="$(date +%Y%m%d)"
+    # TODO(kkleine): Remove this hack and change back to "$(date +%Y%m%d)" or
+    # even better change to the author commit date of the upstream ref
+    local yyyymmdd=20220106    
     local llvm_version=$(llvm_release)
     local llvm_version_major=$(echo $llvm_version | grep -ioP '^[0-9]+')
     local llvm_version_minor=$(echo $llvm_version | grep -ioP '\.\K[0-9]+' | head -n1)
