@@ -6688,6 +6688,22 @@ TEST_F(FormatTest, AllowAllArgumentsOnNextLineDontAlign) {
                       "void functionDecl(\n"
                       "    int A, int B, int C);"),
             format(Input, Style));
+  // Test LeaveAlone setting with 35 column width that *will* break the input
+  // code.
+  Style.AlignAfterOpenBracket = FormatStyle::BAS_LeaveAlone;
+  EXPECT_EQ(StringRef("functionCall(\n"
+                      "    paramA, paramB, paramC);\n"
+                      "void functionDecl(\n"
+                      "    int A, int B, int C);"),
+            format(Input, Style));
+  // Test LeaveAlone setting with column that is large enough to not break the
+  // input code.
+  Style.AlignAfterOpenBracket = FormatStyle::BAS_LeaveAlone;
+  auto old = Style.ColumnLimit;
+  Style.ColumnLimit = 100;
+  EXPECT_EQ(StringRef("functionCall(paramA, paramB, paramC);\n"
+                    "void functionDecl(int A, int B, int C);"), format(Input, Style));
+  Style.ColumnLimit = old;
 }
 
 TEST_F(FormatTest, BreakConstructorInitializersAfterColon) {
@@ -19553,6 +19569,8 @@ TEST_F(FormatTest, ParsesConfiguration) {
               FormatStyle::BAS_AlwaysBreak);
   CHECK_PARSE("AlignAfterOpenBracket: BlockIndent", AlignAfterOpenBracket,
               FormatStyle::BAS_BlockIndent);
+  CHECK_PARSE("AlignAfterOpenBracket: LeaveAlone", AlignAfterOpenBracket,
+              FormatStyle::BAS_LeaveAlone);
   // For backward compatibility:
   CHECK_PARSE("AlignAfterOpenBracket: false", AlignAfterOpenBracket,
               FormatStyle::BAS_DontAlign);

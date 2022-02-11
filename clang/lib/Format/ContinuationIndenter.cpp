@@ -645,31 +645,35 @@ void ContinuationIndenter::addTokenOnCurrentLine(LineState &State, bool DryRun,
   // parenthesis by disallowing any further line breaks if there is no line
   // break after the opening parenthesis. Don't break if it doesn't conserve
   // columns.
-  if ((Style.AlignAfterOpenBracket == FormatStyle::BAS_AlwaysBreak ||
-       Style.AlignAfterOpenBracket == FormatStyle::BAS_BlockIndent) &&
-      (Previous.isOneOf(tok::l_paren, TT_TemplateOpener, tok::l_square) ||
-       (Previous.is(tok::l_brace) && Previous.isNot(BK_Block) &&
-        Style.Cpp11BracedListStyle)) &&
-      State.Column > getNewLineColumn(State) &&
-      (!Previous.Previous || !Previous.Previous->isOneOf(
-                                 tok::kw_for, tok::kw_while, tok::kw_switch)) &&
-      // Don't do this for simple (no expressions) one-argument function calls
-      // as that feels like needlessly wasting whitespace, e.g.:
-      //
-      //   caaaaaaaaaaaall(
-      //       caaaaaaaaaaaall(
-      //           caaaaaaaaaaaall(
-      //               caaaaaaaaaaaaaaaaaaaaaaall(aaaaaaaaaaaaaa, aaaaaaaaa))));
-      Current.FakeLParens.size() > 0 &&
-      Current.FakeLParens.back() > prec::Unknown)
+  if (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+      ((Style.AlignAfterOpenBracket == FormatStyle::BAS_AlwaysBreak ||
+        Style.AlignAfterOpenBracket == FormatStyle::BAS_BlockIndent) &&
+       (Previous.isOneOf(tok::l_paren, TT_TemplateOpener, tok::l_square) ||
+        (Previous.is(tok::l_brace) && Previous.isNot(BK_Block) &&
+         Style.Cpp11BracedListStyle)) &&
+       State.Column > getNewLineColumn(State) &&
+       (!Previous.Previous ||
+        !Previous.Previous->isOneOf(tok::kw_for, tok::kw_while,
+                                    tok::kw_switch)) &&
+       // Don't do this for simple (no expressions) one-argument function calls
+       // as that feels like needlessly wasting whitespace, e.g.:
+       //
+       //   caaaaaaaaaaaall(
+       //       caaaaaaaaaaaall(
+       //           caaaaaaaaaaaall(
+       //               caaaaaaaaaaaaaaaaaaaaaaall(aaaaaaaaaaaaaa,
+       //               aaaaaaaaa))));
+       Current.FakeLParens.size() > 0 &&
+       Current.FakeLParens.back() > prec::Unknown))
     State.Stack.back().NoLineBreak = true;
   if (Previous.is(TT_TemplateString) && Previous.opensScope())
     State.Stack.back().NoLineBreak = true;
 
-  if (Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign &&
-      !State.Stack.back().IsCSharpGenericTypeConstraint &&
-      Previous.opensScope() && Previous.isNot(TT_ObjCMethodExpr) &&
-      (Current.isNot(TT_LineComment) || Previous.is(BK_BracedInit))) {
+  if (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+      (Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign &&
+       !State.Stack.back().IsCSharpGenericTypeConstraint &&
+       Previous.opensScope() && Previous.isNot(TT_ObjCMethodExpr) &&
+       (Current.isNot(TT_LineComment) || Previous.is(BK_BracedInit)))) {
     State.Stack.back().Indent = State.Column + Spaces;
     State.Stack.back().IsAligned = true;
   }
@@ -948,7 +952,8 @@ unsigned ContinuationIndenter::addTokenOnNewLine(LineState &State,
        opensProtoMessageField(*PreviousNonComment, Style)))
     State.Stack.back().BreakBeforeClosingBrace = true;
 
-  if (PreviousNonComment && PreviousNonComment->is(tok::l_paren))
+  if (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+      (PreviousNonComment && PreviousNonComment->is(tok::l_paren)))
     State.Stack.back().BreakBeforeClosingParen =
         Style.AlignAfterOpenBracket == FormatStyle::BAS_BlockIndent;
 
@@ -1046,8 +1051,9 @@ unsigned ContinuationIndenter::getNewLineColumn(const LineState &State) {
       (!Current.Next ||
        Current.Next->isOneOf(tok::semi, tok::kw_const, tok::l_brace)))
     return State.Stack[State.Stack.size() - 2].LastSpace;
-  if (Style.AlignAfterOpenBracket == FormatStyle::BAS_BlockIndent &&
-      Current.is(tok::r_paren) && State.Stack.size() > 1)
+  if (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+      (Style.AlignAfterOpenBracket == FormatStyle::BAS_BlockIndent &&
+       Current.is(tok::r_paren) && State.Stack.size() > 1))
     return State.Stack[State.Stack.size() - 2].LastSpace;
   if (NextNonComment->is(TT_TemplateString) && NextNonComment->closesScope())
     return State.Stack[State.Stack.size() - 2].LastSpace;
@@ -1390,8 +1396,9 @@ void ContinuationIndenter::moveStatePastFakeLParens(LineState &State,
          PrecedenceLevel < prec::Assignment) &&
         (!Previous || Previous->isNot(tok::kw_return) ||
          (Style.Language != FormatStyle::LK_Java && PrecedenceLevel > 0)) &&
-        (Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign ||
-         PrecedenceLevel != prec::Comma || Current.NestingLevel == 0)) {
+        (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+         (Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign ||
+          PrecedenceLevel != prec::Comma || Current.NestingLevel == 0))) {
       NewParenState.Indent =
           std::max(std::max(State.Column, NewParenState.Indent),
                    State.Stack.back().LastSpace);
@@ -1421,7 +1428,8 @@ void ContinuationIndenter::moveStatePastFakeLParens(LineState &State,
     if (PrecedenceLevel > prec::Unknown)
       NewParenState.LastSpace = std::max(NewParenState.LastSpace, State.Column);
     if (PrecedenceLevel != prec::Conditional && !Current.is(TT_UnaryOperator) &&
-        Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign)
+        (Style.AlignAfterOpenBracket != FormatStyle::BAS_LeaveAlone &&
+         Style.AlignAfterOpenBracket != FormatStyle::BAS_DontAlign))
       NewParenState.StartOfFunctionCall = State.Column;
 
     // Indent conditional expressions, unless they are chained "else-if"

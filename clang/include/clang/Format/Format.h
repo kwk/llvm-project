@@ -95,6 +95,8 @@ struct FormatStyle {
     ///  Note: This currently only applies to parentheses.
     /// \endwarning
     BAS_BlockIndent,
+    /// Skip this formatting
+    BAS_LeaveAlone,
   };
 
   /// If ``true``, horizontally aligns arguments after an open bracket.
@@ -4041,6 +4043,10 @@ FormatStyle getMicrosoftStyle(FormatStyle::LanguageKind Language);
 
 /// Returns style indicating formatting should be not applied at all.
 FormatStyle getNoStyle();
+
+/// Returns style that tells each setting to not do anything. Then you can
+/// selectively turn things on again.
+FormatStyle getLeaveAloneStyle(FormatStyle::LanguageKind Language);
 
 /// Gets a predefined style for the specified language by name.
 ///

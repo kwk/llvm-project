@@ -230,6 +230,9 @@ the configuration (without a prefix: ``Auto``).
 
      Note: This currently only applies to parentheses.
 
+  * ``BAS_LeaveAlone`` (in configuration: ``LeaveAlone``)
+    Skip this formatting feature
+
 
 
 **AlignArrayOfStructures** (``ArrayInitializerAlignmentStyle``) :versionbadge:`clang-format 13`

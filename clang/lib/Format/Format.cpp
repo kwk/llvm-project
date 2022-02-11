@@ -387,6 +387,7 @@ template <> struct ScalarEnumerationTraits<FormatStyle::BracketAlignmentStyle> {
     IO.enumCase(Value, "DontAlign", FormatStyle::BAS_DontAlign);
     IO.enumCase(Value, "AlwaysBreak", FormatStyle::BAS_AlwaysBreak);
     IO.enumCase(Value, "BlockIndent", FormatStyle::BAS_BlockIndent);
+    IO.enumCase(Value, "LeaveAlone", FormatStyle::BAS_LeaveAlone);
 
     // For backward compatibility.
     IO.enumCase(Value, "true", FormatStyle::BAS_Align);
@@ -1576,6 +1577,21 @@ FormatStyle getNoStyle() {
   return NoStyle;
 }
 
+FormatStyle getLeaveAloneStyle(FormatStyle::LanguageKind Language) {
+  FormatStyle LeaveAloneStyle = getLLVMStyle(Language);
+
+  // To make this even more explicit, derived styles shall be able to invidually
+  // and selectively enable each setting based on preference.
+  LeaveAloneStyle.DisableFormat = false;
+
+  // Let's just have one setting to play with for now
+  LeaveAloneStyle.SortIncludes = FormatStyle::SI_Never;
+  LeaveAloneStyle.AlignAfterOpenBracket = FormatStyle::BAS_LeaveAlone;
+  LeaveAloneStyle.AlignArrayOfStructures = FormatStyle::AIAS_None;
+
+  return LeaveAloneStyle;
+}
+
 bool getPredefinedStyle(StringRef Name, FormatStyle::LanguageKind Language,
                         FormatStyle *Style) {
   if (Name.equals_insensitive("llvm"))
@@ -1594,6 +1610,8 @@ bool getPredefinedStyle(StringRef Name, FormatStyle::LanguageKind Language,
     *Style = getMicrosoftStyle(Language);
   else if (Name.equals_insensitive("none"))
     *Style = getNoStyle();
+  else if (Name.equals_insensitive("leavealone"))
+    *Style = getLeaveAloneStyle(Language);
   else if (Name.equals_insensitive("inheritparentconfig"))
     Style->InheritsParentConfig = true;
   else
