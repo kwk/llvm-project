@@ -387,7 +387,6 @@ template <> struct ScalarEnumerationTraits<FormatStyle::BracketAlignmentStyle> {
     IO.enumCase(Value, "DontAlign", FormatStyle::BAS_DontAlign);
     IO.enumCase(Value, "AlwaysBreak", FormatStyle::BAS_AlwaysBreak);
     IO.enumCase(Value, "BlockIndent", FormatStyle::BAS_BlockIndent);
-    IO.enumCase(Value, "LeaveAlone", FormatStyle::BAS_LeaveAlone);
 
     // For backward compatibility.
     IO.enumCase(Value, "true", FormatStyle::BAS_Align);
@@ -1586,7 +1585,7 @@ FormatStyle getLeaveAloneStyle(FormatStyle::LanguageKind Language) {
 
   // Let's just have one setting to play with for now
   LeaveAloneStyle.SortIncludes = FormatStyle::SI_Never;
-  LeaveAloneStyle.AlignAfterOpenBracket = FormatStyle::BAS_LeaveAlone;
+  LeaveAloneStyle.AlignAfterOpenBracket = FormatStyle::BAS_DontAlign;
   LeaveAloneStyle.AlignArrayOfStructures = FormatStyle::AIAS_None;
 
   return LeaveAloneStyle;

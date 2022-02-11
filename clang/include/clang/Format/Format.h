@@ -95,8 +95,6 @@ struct FormatStyle {
     ///  Note: This currently only applies to parentheses.
     /// \endwarning
     BAS_BlockIndent,
-    /// Skip this formatting
-    BAS_LeaveAlone,
   };
 
   /// If ``true``, horizontally aligns arguments after an open bracket.
