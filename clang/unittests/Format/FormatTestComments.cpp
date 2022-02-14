@@ -2848,6 +2848,21 @@ TEST_F(FormatTestComments, AlignTrailingComments) {
                "int a; //\n");
   verifyFormat("/**/   //\n"
                "int a; //\n");
+
+  // Make sure when alignment of trailing comments is left alone, nothing happens.
+  auto style = getLLVMStyleWithColumns(100);
+  style.AlignTrailingComments = FormatStyle::ATCS_LeaveAlone;
+  style.SpacesBeforeTrailingComments = -1;
+//   EXPECT_EQ("#define FOO // foo \\\n"
+//             "#define BAR   // bar \\\n",
+//      format("#define FOO // foo \\\n"
+//             "#define BAR   // bar \\\n",
+//                    style));
+  EXPECT_EQ("#define FOO    // foo \\n"
+            "#define BAR    // bar \\n",
+     format("#define FOO    // foo \\n"
+            "#define BAR    // bar \\n",
+                   style));
 }
 
 TEST_F(FormatTestComments, AlignsBlockCommentDecorations) {

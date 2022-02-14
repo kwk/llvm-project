@@ -461,7 +461,7 @@ struct FormatStyle {
 
   /// Options for aligning backslashes in escaped newlines.
   /// \version 5
-  EscapedNewlineAlignmentStyle AlignEscapedNewlines;
+  llvm::Optional<EscapedNewlineAlignmentStyle> AlignEscapedNewlines;
 
   /// Different styles for aligning operands.
   enum OperandAlignmentStyle : unsigned char {
@@ -501,15 +501,28 @@ struct FormatStyle {
   /// expressions.
   /// \version 12
   OperandAlignmentStyle AlignOperands;
+  
+  /// Different styles for aligning trailing comments.
+  enum AlignTrailingCommentStyle : unsigned char {
+    /// Align trailing comments, e.g.:
+    /// \code
+    ///   int a;     // My comment a
+    ///   int b = 2; // comment  b
+    /// \endcode
+    ATCS_Align,
+    /// Don't align trailing comments, e.g.:
+    /// \code
+    ///   int a; // My comment a
+    ///   int b = 2; // comment about b
+    /// \endcode
+    ATCS_DontAlign,
+    /// Leave trailing comments as is.
+    ATCS_LeaveAlone,
+  };
 
   /// If ``true``, aligns trailing comments.
-  /// \code
-  ///   true:                                   false:
-  ///   int a;     // My comment a      vs.     int a; // My comment a
-  ///   int b = 2; // comment  b                int b = 2; // comment about b
-  /// \endcode
   /// \version 3.7
-  bool AlignTrailingComments;
+  AlignTrailingCommentStyle AlignTrailingComments;
 
   /// \brief If a function call or braced initializer list doesn't fit on a
   /// line, allow putting all arguments onto the next line, even if

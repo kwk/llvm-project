@@ -528,6 +528,18 @@ template <> struct ScalarEnumerationTraits<FormatStyle::SpacesInAnglesStyle> {
   }
 };
 
+template <> struct ScalarEnumerationTraits<FormatStyle::AlignTrailingCommentStyle> {
+  static void enumeration(IO &IO, FormatStyle::AlignTrailingCommentStyle &Value) {
+    IO.enumCase(Value, "Align", FormatStyle::ATCS_Align);
+    IO.enumCase(Value, "DontAlign", FormatStyle::ATCS_DontAlign);
+    IO.enumCase(Value, "LeaveAlone", FormatStyle::ATCS_LeaveAlone);
+
+    // For backward compatibility.
+    IO.enumCase(Value, "false", FormatStyle::ATCS_DontAlign);
+    IO.enumCase(Value, "true", FormatStyle::ATCS_Align);
+  }
+};
+
 template <> struct MappingTraits<FormatStyle> {
   static void mapping(IO &IO, FormatStyle &Style) {
     // When reading, read the language first, we need it for getPredefinedStyle.
@@ -535,7 +547,7 @@ template <> struct MappingTraits<FormatStyle> {
 
     if (IO.outputting()) {
       StringRef Styles[] = {"LLVM",   "Google", "Chromium", "Mozilla",
-                            "WebKit", "GNU",    "Microsoft"};
+                            "WebKit", "GNU",    "Microsoft", "LeaveAlone"};
       for (StringRef StyleName : Styles) {
         FormatStyle PredefinedStyle;
         if (getPredefinedStyle(StyleName, Style.Language, &PredefinedStyle) &&
@@ -1108,7 +1120,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.AlignAfterOpenBracket = FormatStyle::BAS_Align;
   LLVMStyle.AlignArrayOfStructures = FormatStyle::AIAS_None;
   LLVMStyle.AlignOperands = FormatStyle::OAS_Align;
-  LLVMStyle.AlignTrailingComments = true;
+  LLVMStyle.AlignTrailingComments = FormatStyle::ATCS_Align;
   LLVMStyle.AlignConsecutiveAssignments = FormatStyle::ACS_None;
   LLVMStyle.AlignConsecutiveBitFields = FormatStyle::ACS_None;
   LLVMStyle.AlignConsecutiveDeclarations = FormatStyle::ACS_None;
@@ -1357,7 +1369,7 @@ FormatStyle getGoogleStyle(FormatStyle::LanguageKind Language) {
   if (Language == FormatStyle::LK_Java) {
     GoogleStyle.AlignAfterOpenBracket = FormatStyle::BAS_DontAlign;
     GoogleStyle.AlignOperands = FormatStyle::OAS_DontAlign;
-    GoogleStyle.AlignTrailingComments = false;
+    GoogleStyle.AlignTrailingComments = FormatStyle::ATCS_DontAlign;
     GoogleStyle.AllowShortFunctionsOnASingleLine = FormatStyle::SFS_Empty;
     GoogleStyle.AllowShortIfStatementsOnASingleLine = FormatStyle::SIS_Never;
     GoogleStyle.AlwaysBreakBeforeMultilineStrings = false;
@@ -1505,7 +1517,7 @@ FormatStyle getWebKitStyle() {
   Style.AccessModifierOffset = -4;
   Style.AlignAfterOpenBracket = FormatStyle::BAS_DontAlign;
   Style.AlignOperands = FormatStyle::OAS_DontAlign;
-  Style.AlignTrailingComments = false;
+  Style.AlignTrailingComments = FormatStyle::ATCS_DontAlign;
   Style.AllowShortBlocksOnASingleLine = FormatStyle::SBS_Empty;
   Style.BreakBeforeBinaryOperators = FormatStyle::BOS_All;
   Style.BreakBeforeBraces = FormatStyle::BS_WebKit;
@@ -1586,6 +1598,15 @@ FormatStyle getLeaveAloneStyle(FormatStyle::LanguageKind Language) {
   // Let's just have one setting to play with for now
   LeaveAloneStyle.SortIncludes = FormatStyle::SI_Never;
   LeaveAloneStyle.AlignAfterOpenBracket = FormatStyle::BAS_DontAlign;
+  LeaveAloneStyle.AlignArrayOfStructures = FormatStyle::AIAS_None;
+  LeaveAloneStyle.AlignConsecutiveMacros = FormatStyle::ACS_None;
+  LeaveAloneStyle.AlignConsecutiveAssignments = FormatStyle::ACS_None;
+  LeaveAloneStyle.AlignConsecutiveBitFields = FormatStyle::ACS_None;
+  LeaveAloneStyle.AlignConsecutiveDeclarations = FormatStyle::ACS_None;
+  LeaveAloneStyle.AlignEscapedNewlines = FormatStyle::ENAS_DontAlign;
+  LeaveAloneStyle.AlignOperands = FormatStyle::OAS_DontAlign;
+  LeaveAloneStyle.AlignTrailingComments = FormatStyle::ATCS_LeaveAlone;
+
   LeaveAloneStyle.AlignArrayOfStructures = FormatStyle::AIAS_None;
 
   return LeaveAloneStyle;

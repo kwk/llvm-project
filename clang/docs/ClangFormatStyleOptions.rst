@@ -647,12 +647,12 @@ the configuration (without a prefix: ``Auto``).
 
 
 
-**AlignTrailingComments** (``Boolean``) :versionbadge:`clang-format 3.7`
-  If ``true``, aligns trailing comments.
+**AlignTrailingComments** (``AlignTrailingCommentsStyle``) :versionbadge:`clang-format 3.7`
+  If ``ATCS_Align``, aligns trailing comments.
 
   .. code-block:: c++
 
-    true:                                   false:
+    ATCS_Align:                             ATCS_DontAlign:
     int a;     // My comment a      vs.     int a; // My comment a
     int b = 2; // comment  b                int b = 2; // comment about b
 

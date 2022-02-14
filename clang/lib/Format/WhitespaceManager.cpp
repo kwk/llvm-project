@@ -913,7 +913,7 @@ void WhitespaceManager::alignTrailingComments() {
         break;
       }
     }
-    if (!Style.AlignTrailingComments || FollowsRBraceInColumn0) {
+    if (Style.AlignTrailingComments != FormatStyle::ATCS_LeaveAlone && (Style.AlignTrailingComments == FormatStyle::ATCS_DontAlign || FollowsRBraceInColumn0)) {
       alignTrailingComments(StartOfSequence, i, MinColumn);
       MinColumn = ChangeMinColumn;
       MaxColumn = ChangeMinColumn;

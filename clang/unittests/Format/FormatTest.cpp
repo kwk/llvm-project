@@ -19254,7 +19254,6 @@ TEST_F(FormatTest, GetsCorrectBasedOnStyle) {
 TEST_F(FormatTest, ParsesConfigurationBools) {
   FormatStyle Style = {};
   Style.Language = FormatStyle::LK_Cpp;
-  CHECK_PARSE_BOOL(AlignTrailingComments);
   CHECK_PARSE_BOOL(AllowAllArgumentsOnNextLine);
   CHECK_PARSE_BOOL(AllowAllParametersOfDeclarationOnNextLine);
   CHECK_PARSE_BOOL(AllowShortCaseLabelsOnASingleLine);
@@ -19367,6 +19366,18 @@ TEST_F(FormatTest, ParsesConfiguration) {
               FormatStyle::QAS_Left);
   CHECK_PARSE("QualifierAlignment: Custom", QualifierAlignment,
               FormatStyle::QAS_Custom);
+
+  Style.AlignTrailingComments = FormatStyle::ATCS_Align;
+  CHECK_PARSE("AlignTrailingComments: LeaveAlone", AlignTrailingComments,
+    FormatStyle::ATCS_LeaveAlone);
+  CHECK_PARSE("AlignTrailingComments: Align", AlignTrailingComments,
+              FormatStyle::ATCS_Align);
+    CHECK_PARSE("AlignTrailingComments: DontAlign", AlignTrailingComments,
+    FormatStyle::ATCS_DontAlign);  
+  CHECK_PARSE("AlignTrailingComments: true", AlignTrailingComments,
+              FormatStyle::ATCS_Align);
+              CHECK_PARSE("AlignTrailingComments: false", AlignTrailingComments,
+    FormatStyle::ATCS_DontAlign);
 
   Style.QualifierOrder.clear();
   CHECK_PARSE("QualifierOrder: [ const, volatile, type ]", QualifierOrder,
