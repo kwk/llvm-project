@@ -2682,7 +2682,7 @@ static void sortCppIncludes(const FormatStyle &Style,
 namespace {
 
 const char CppIncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#]?[\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
+    R"(^[\t\ ]*[@#][\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
 
 } // anonymous namespace
 

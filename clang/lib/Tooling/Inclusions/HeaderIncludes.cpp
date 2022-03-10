@@ -174,7 +174,7 @@ inline StringRef trimInclude(StringRef IncludeName) {
 }
 
 const char IncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#]?[\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
+    R"(^[\t\ ]*[@#][\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
 
 // The filename of Path excluding extension.
 // Used to match implementation with headers, this differs from sys::path::stem:
