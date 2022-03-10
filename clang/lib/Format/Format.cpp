@@ -2682,7 +2682,7 @@ static void sortCppIncludes(const FormatStyle &Style,
 namespace {
 
 const char CppIncludeRegexPattern[] =
-    R"(^[\t\ ]*#[\t\ ]*(import|include)[^"<]*(["<][^">]*[">]))";
+    R"(^[\t\ ]*[@#]?[\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
 
 } // anonymous namespace
 
@@ -2752,6 +2752,13 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
     if (!FormattingOff && !MergeWithNextLine) {
       if (IncludeRegex.match(Line, &Matches)) {
         StringRef IncludeName = Matches[2];
+        // HACK(kkleine): Sort C++ module includes/imports that are not enclosed
+        // in "" or <> as if they are enclosed with <.
+        if (!IncludeName.startswith("\"") && !IncludeName.startswith("<")) {
+          IncludeName =
+              StringRef(Twine("<", IncludeName).concat(Twine(">")).str());
+        }
+
         if (Line.contains("/*") && !Line.contains("*/")) {
           // #include with a start of a block comment, but without the end.
           // Need to keep all the lines until the end of the comment together.

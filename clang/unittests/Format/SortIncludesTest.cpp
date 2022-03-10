@@ -458,6 +458,19 @@ TEST_F(SortIncludesTest, HandlesMultilineIncludes) {
                  "#include \"b.h\"\n"));
 }
 
+TEST_F(SortIncludesTest, SupportAtImportLines) {
+  EXPECT_EQ("#import \"a.h\"\n"
+            "#import \"b.h\"\n"
+            "#import \"c.h\"\n"
+            "#import <d/e.h>\n"
+            "@import Foundation;\n",
+            sort("#import \"b.h\"\n"
+                 "#import \"c.h\"\n"
+                 "#import <d/e.h>\n"
+                 "@import Foundation;\n"
+                 "#import \"a.h\"\n"));
+}
+
 TEST_F(SortIncludesTest, LeavesMainHeaderFirst) {
   Style.IncludeIsMainRegex = "([-_](test|unittest))?$";
   EXPECT_EQ("#include \"llvm/a.h\"\n"
