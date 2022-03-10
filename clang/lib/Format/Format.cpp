@@ -2752,11 +2752,13 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
     if (!FormattingOff && !MergeWithNextLine) {
       if (IncludeRegex.match(Line, &Matches)) {
         StringRef IncludeName = Matches[2];
+        SmallString<0> IncludeNameStr;
         // HACK(kkleine): Sort C++ module includes/imports that are not enclosed
         // in "" or <> as if they are enclosed with <.
         if (!IncludeName.startswith("\"") && !IncludeName.startswith("<")) {
-          IncludeName =
-              StringRef(Twine("<", IncludeName).concat(Twine(">")).str());
+          IncludeName = Twine("<", IncludeName)
+                            .concat(Twine(">"))
+                            .toStringRef(IncludeNameStr);
         }
 
         if (Line.contains("/*") && !Line.contains("*/")) {
