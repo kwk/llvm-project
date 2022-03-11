@@ -2682,7 +2682,7 @@ static void sortCppIncludes(const FormatStyle &Style,
 namespace {
 
 const char CppIncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#]?[\t\ ]*(import|include)[^"<]*[\t\n\ \\]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
+    R"(^[\t\ ]*[@#][\t\ ]*(import|include)[^"<]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
 
 } // anonymous namespace
 
@@ -2756,7 +2756,7 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
         // HACK(kkleine): Sort C++ module includes/imports that are not enclosed
         // in "" or <> as if they are enclosed with <.
         if (!IncludeName.startswith("\"") && !IncludeName.startswith("<")) {
-          IncludeName = Twine("<", IncludeName)
+          IncludeName = Twine("<ZZZZZZZZZZZZZZZZ", IncludeName)
                             .concat(Twine(">"))
                             .toStringRef(IncludeNameStr);
         }
