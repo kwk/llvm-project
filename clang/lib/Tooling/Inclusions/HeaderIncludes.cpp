@@ -170,7 +170,7 @@ unsigned getMaxHeaderInsertionOffset(StringRef FileName, StringRef Code,
 }
 
 inline StringRef trimInclude(StringRef IncludeName) {
-  return IncludeName.trim("\"<>");
+  return IncludeName.trim("\"<>;");
 }
 
 const char IncludeRegexPattern[] =

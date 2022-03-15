@@ -2683,7 +2683,7 @@ namespace {
 
 const char CppIncludeRegexPattern[] =
     R"(^[\t\ ]*[@#][\t\ ]*(import|include)([^"]*("[^"]+")|[^<]*(<[^>]+>)|[\t\ ]*([^;]+;)))";
-
+    // R"(^[\t\ ]*#[\t\ ]*(import|include)[^"<]*(["<][^">]*[">]))";
 } // anonymous namespace
 
 tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
@@ -3048,6 +3048,7 @@ formatReplacements(StringRef Code, const tooling::Replacements &Replaces,
 namespace {
 
 inline bool isHeaderInsertion(const tooling::Replacement &Replace) {
+  fprintf(stderr, "\n\n %s %10d \n\n", __FILE__, __LINE__);
   return Replace.getOffset() == UINT_MAX && Replace.getLength() == 0 &&
          llvm::Regex(CppIncludeRegexPattern)
              .match(Replace.getReplacementText());
@@ -3055,6 +3056,10 @@ inline bool isHeaderInsertion(const tooling::Replacement &Replace) {
 
 inline bool isHeaderDeletion(const tooling::Replacement &Replace) {
   return Replace.getOffset() == UINT_MAX && Replace.getLength() == 1;
+}
+
+inline StringRef trimInclude(StringRef IncludeName) {
+  return IncludeName.trim("\"<>;");
 }
 
 // FIXME: insert empty lines between newly created blocks.
@@ -3090,7 +3095,7 @@ fixCppIncludeInsertions(StringRef Code, const tooling::Replacements &Replaces,
 
   for (const auto &Header : HeadersToDelete) {
     tooling::Replacements Replaces =
-        Includes.remove(Header.trim("\"<>"), Header.startswith("<"));
+        Includes.remove(trimInclude(Header), Header.startswith("<"));
     for (const auto &R : Replaces) {
       auto Err = Result.add(R);
       if (Err) {
@@ -3102,6 +3107,7 @@ fixCppIncludeInsertions(StringRef Code, const tooling::Replacements &Replaces,
     }
   }
 
+  fprintf(stderr, "\n\n %s %10d \n\n", __FILE__, __LINE__);
   llvm::Regex IncludeRegex = llvm::Regex(CppIncludeRegexPattern);
   llvm::SmallVector<StringRef, 4> Matches;
   for (const auto &R : HeaderInsertions) {
@@ -3110,9 +3116,16 @@ fixCppIncludeInsertions(StringRef Code, const tooling::Replacements &Replaces,
     assert(Matched && "Header insertion replacement must have replacement text "
                       "'#include ...'");
     (void)Matched;
-    auto IncludeName = Matches[2];
+    StringRef IncludeName;
+    for (int i=Matches.size()-1; i>0; i--) {
+      if (!Matches[i].empty()) {
+        IncludeName = Matches[i];
+        break;
+      }
+    }
+    // auto IncludeName = Matches[2];
     auto Replace =
-        Includes.insert(IncludeName.trim("\"<>"), IncludeName.startswith("<"));
+        Includes.insert(trimInclude(IncludeName), IncludeName.startswith("<"));
     if (Replace) {
       auto Err = Result.add(*Replace);
       if (Err) {
