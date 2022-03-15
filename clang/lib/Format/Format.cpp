@@ -2682,7 +2682,7 @@ static void sortCppIncludes(const FormatStyle &Style,
 namespace {
 
 const char CppIncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#][\t\ ]*(import|include)[^"<]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
+    R"(^[\t\ ]*[@#][\t\ ]*(import|include)([^"]*("[^"]+")|[^<]*(<[^>]+>)|[\t\ ]*([^;]+);))";
 
 } // anonymous namespace
 
@@ -2698,7 +2698,8 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
   llvm::Regex IncludeRegex(CppIncludeRegexPattern);
   SmallVector<StringRef, 4> Matches;
   SmallVector<IncludeDirective, 16> IncludesInBlock;
-
+  SmallVector<SmallString<0>, 16> IncludeNameStrings;
+  
   // In compiled files, consider the first #include to be the main #include of
   // the file if it is not a system #include. This ensures that the header
   // doesn't have hidden dependencies
@@ -2751,14 +2752,23 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
     bool MergeWithNextLine = Trimmed.endswith("\\");
     if (!FormattingOff && !MergeWithNextLine) {
       if (IncludeRegex.match(Line, &Matches)) {
-        StringRef IncludeName = Matches[2];
-        SmallString<0> IncludeNameStr;
+        StringRef IncludeName;
+        for (int i=Matches.size()-1; i>0; i--) {
+          if (!Matches[i].empty()) {
+            IncludeName = Matches[i];
+            break;
+          }
+        }
         // HACK(kkleine): Sort C++ module includes/imports that are not enclosed
-        // in "" or <> as if they are enclosed with <.
+        // in "" or <> as if they are enclosed with <zzzzzzzzzzzzzzz and >. This
+        // will sort them in with the rest of the <...> includes but puts them
+        // at the end.
         if (!IncludeName.startswith("\"") && !IncludeName.startswith("<")) {
-          IncludeName = Twine("<ZZZZZZZZZZZZZZZZ", IncludeName)
+          SmallString<0> s;
+          IncludeNameStrings.push_back(s);
+          IncludeName = Twine("<zzzzzzzzzzzzzzz", IncludeName)
                             .concat(Twine(">"))
-                            .toStringRef(IncludeNameStr);
+                            .toStringRef(IncludeNameStrings.back());
         }
 
         if (Line.contains("/*") && !Line.contains("*/")) {
@@ -2780,6 +2790,11 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
         IncludesInBlock.push_back(
             {IncludeName, Line, Prev, Category, Priority});
       } else if (!IncludesInBlock.empty() && !EmptyLineSkipped) {
+        fprintf(stderr, "IncludesInBlock1: ");
+        for (auto i:IncludesInBlock) {
+          fprintf(stderr, " '%s' ", i.Filename.str().c_str());
+        }
+        fprintf(stderr, "\n");
         sortCppIncludes(Style, IncludesInBlock, Ranges, FileName, Code,
                         Replaces, Cursor);
         IncludesInBlock.clear();
@@ -2797,6 +2812,11 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
     SearchFrom = Pos + 1;
   }
   if (!IncludesInBlock.empty()) {
+    fprintf(stderr, "IncludesInBlock2: ");
+    for (auto i:IncludesInBlock) {
+      fprintf(stderr, " '%s' ", i.Filename.str().c_str());
+    }
+    fprintf(stderr, "\n");
     sortCppIncludes(Style, IncludesInBlock, Ranges, FileName, Code, Replaces,
                     Cursor);
   }
