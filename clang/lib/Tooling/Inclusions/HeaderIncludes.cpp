@@ -170,11 +170,11 @@ unsigned getMaxHeaderInsertionOffset(StringRef FileName, StringRef Code,
 }
 
 inline StringRef trimInclude(StringRef IncludeName) {
-  return IncludeName.trim("\"<>;");
+  return IncludeName.trim("\"<>");
 }
 
 const char IncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#][\t\ ]*(import|include)[^"<]*("[^"]+"|<[^>]+>|[^"<>;]+;))";
+    R"(^[\t\ ]*#[\t\ ]*(import|include)[^"<]*(["<][^">]*[">]))";
 
 // The filename of Path excluding extension.
 // Used to match implementation with headers, this differs from sys::path::stem:
@@ -276,6 +276,7 @@ HeaderIncludes::HeaderIncludes(StringRef FileName, StringRef Code,
                           FileName, Code.drop_front(MinInsertOffset), Style)),
       Categories(Style, FileName),
       IncludeRegex(llvm::Regex(IncludeRegexPattern)) {
+    fprintf(stderr, "\n\n %s %10d \n\n", __FILE__, __LINE__);
   // Add 0 for main header and INT_MAX for headers that are not in any
   // category.
   Priorities = {0, INT_MAX};
@@ -290,6 +291,10 @@ HeaderIncludes::HeaderIncludes(StringRef FileName, StringRef Code,
   for (auto Line : Lines) {
     NextLineOffset = std::min(Code.size(), Offset + Line.size() + 1);
     if (IncludeRegex.match(Line, &Matches)) {
+      fprintf(stderr, "\n\n %s %10d IncludeRegex: %s\n\n", __FILE__, __LINE__, IncludeRegexPattern);
+      for (auto m:Matches) {
+        fprintf(stderr, "Match: %s\n", m.str().c_str());
+      }
       // If this is the last line without trailing newline, we need to make
       // sure we don't delete across the file boundary.
       addExistingInclude(

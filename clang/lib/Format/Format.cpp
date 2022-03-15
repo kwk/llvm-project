@@ -2750,6 +2750,7 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
              tooling::IncludeStyle::IBS_Regroup);
 
     bool MergeWithNextLine = Trimmed.endswith("\\");
+    fprintf(stderr, "\n\nHERE 1 \n\n");
     if (!FormattingOff && !MergeWithNextLine) {
       if (IncludeRegex.match(Line, &Matches)) {
         StringRef IncludeName;
