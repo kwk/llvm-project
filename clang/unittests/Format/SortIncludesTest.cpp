@@ -459,6 +459,7 @@ TEST_F(SortIncludesTest, HandlesMultilineIncludes) {
 }
 
 TEST_F(SortIncludesTest, SupportAtImportLines) {
+  // Test from https://github.com/llvm/llvm-project/issues/38995
   EXPECT_EQ("#import \"a.h\"\n"
             "#import \"b.h\"\n"
             "#import \"c.h\"\n"
@@ -468,6 +469,25 @@ TEST_F(SortIncludesTest, SupportAtImportLines) {
                  "#import \"c.h\"\n"
                  "#import <d/e.h>\n"
                  "@import Foundation;\n"
+                 "#import \"a.h\"\n"));
+
+  // Slightly more complicated test that shows sorting in each priorities still
+  // works.
+  EXPECT_EQ("#import \"a.h\"\n"
+            "#import \"b.h\"\n"
+            "#import \"c.h\"\n"
+            "#import <d/e.h>\n"
+            "@import Base;\n"
+            "@import Foundation;\n"
+            "@import base;\n"
+            "@import foundation;\n",
+            sort("#import \"b.h\"\n"
+                 "#import \"c.h\"\n"
+                 "@import Base;\n"
+                 "#import <d/e.h>\n"
+                 "@import foundation;\n"
+                 "@import Foundation;\n"
+                 "@import base;\n"
                  "#import \"a.h\"\n"));
 }
 

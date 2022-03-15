@@ -2682,7 +2682,7 @@ static void sortCppIncludes(const FormatStyle &Style,
 namespace {
 
 const char CppIncludeRegexPattern[] =
-    R"(^[\t\ ]*[@#][\t\ ]*(import|include)([^"]*("[^"]+")|[^<]*(<[^>]+>)|[\t\ ]*([^;]+);))";
+    R"(^[\t\ ]*[@#][\t\ ]*(import|include)([^"]*("[^"]+")|[^<]*(<[^>]+>)|[\t\ ]*([^;]+;)))";
 
 } // anonymous namespace
 
@@ -2698,7 +2698,7 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
   llvm::Regex IncludeRegex(CppIncludeRegexPattern);
   SmallVector<StringRef, 4> Matches;
   SmallVector<IncludeDirective, 16> IncludesInBlock;
-  SmallVector<SmallString<0>, 16> IncludeNameStrings;
+  // SmallVector<SmallString<0>, 16> IncludeNameStrings;
   
   // In compiled files, consider the first #include to be the main #include of
   // the file if it is not a system #include. This ensures that the header
@@ -2759,16 +2759,9 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
             break;
           }
         }
-        // HACK(kkleine): Sort C++ module includes/imports that are not enclosed
-        // in "" or <> as if they are enclosed with <zzzzzzzzzzzzzzz and >. This
-        // will sort them in with the rest of the <...> includes but puts them
-        // at the end.
-        if (!IncludeName.startswith("\"") && !IncludeName.startswith("<")) {
-          SmallString<0> s;
-          IncludeNameStrings.push_back(s);
-          IncludeName = Twine("<zzzzzzzzzzzzzzz", IncludeName)
-                            .concat(Twine(">"))
-                            .toStringRef(IncludeNameStrings.back());
+        int WithSemicolon = false;
+        if (!IncludeName.startswith("\"") && !IncludeName.startswith("<") && IncludeName.endswith(";")) {
+          WithSemicolon = true;
         }
 
         if (Line.contains("/*") && !Line.contains("*/")) {
@@ -2783,8 +2776,9 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
         int Category = Categories.getIncludePriority(
             IncludeName,
             /*CheckMainHeader=*/!MainIncludeFound && FirstIncludeBlock);
-        int Priority = Categories.getSortIncludePriority(
+        int Priority = WithSemicolon ? INT_MAX : Categories.getSortIncludePriority(
             IncludeName, !MainIncludeFound && FirstIncludeBlock);
+        fprintf(stderr, "IncludeName: %s Category: %d Priority: %d\n", IncludeName.str().c_str(), Category, Priority);
         if (Category == 0)
           MainIncludeFound = true;
         IncludesInBlock.push_back(
