@@ -2697,7 +2697,6 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
   llvm::Regex IncludeRegex(CppIncludeRegexPattern);
   SmallVector<StringRef, 4> Matches;
   SmallVector<IncludeDirective, 16> IncludesInBlock;
-  // SmallVector<SmallString<0>, 16> IncludeNameStrings;
   
   // In compiled files, consider the first #include to be the main #include of
   // the file if it is not a system #include. This ensures that the header
@@ -2758,6 +2757,7 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
             break;
           }
         }
+        // This addresses https://github.com/llvm/llvm-project/issues/38995
         int WithSemicolon = false;
         if (!IncludeName.startswith("\"") && !IncludeName.startswith("<") && IncludeName.endswith(";")) {
           WithSemicolon = true;
