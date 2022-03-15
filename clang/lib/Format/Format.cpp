@@ -2683,7 +2683,6 @@ namespace {
 
 const char CppIncludeRegexPattern[] =
     R"(^[\t\ ]*[@#][\t\ ]*(import|include)([^"]*("[^"]+")|[^<]*(<[^>]+>)|[\t\ ]*([^;]+;)))";
-    // R"(^[\t\ ]*#[\t\ ]*(import|include)[^"<]*(["<][^">]*[">]))";
 } // anonymous namespace
 
 tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
@@ -2750,7 +2749,6 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
              tooling::IncludeStyle::IBS_Regroup);
 
     bool MergeWithNextLine = Trimmed.endswith("\\");
-    fprintf(stderr, "\n\nHERE 1 \n\n");
     if (!FormattingOff && !MergeWithNextLine) {
       if (IncludeRegex.match(Line, &Matches)) {
         StringRef IncludeName;
@@ -2779,17 +2777,11 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
             /*CheckMainHeader=*/!MainIncludeFound && FirstIncludeBlock);
         int Priority = WithSemicolon ? INT_MAX : Categories.getSortIncludePriority(
             IncludeName, !MainIncludeFound && FirstIncludeBlock);
-        fprintf(stderr, "IncludeName: %s Category: %d Priority: %d\n", IncludeName.str().c_str(), Category, Priority);
         if (Category == 0)
           MainIncludeFound = true;
         IncludesInBlock.push_back(
             {IncludeName, Line, Prev, Category, Priority});
       } else if (!IncludesInBlock.empty() && !EmptyLineSkipped) {
-        fprintf(stderr, "IncludesInBlock1: ");
-        for (auto i:IncludesInBlock) {
-          fprintf(stderr, " '%s' ", i.Filename.str().c_str());
-        }
-        fprintf(stderr, "\n");
         sortCppIncludes(Style, IncludesInBlock, Ranges, FileName, Code,
                         Replaces, Cursor);
         IncludesInBlock.clear();
@@ -2807,11 +2799,6 @@ tooling::Replacements sortCppIncludes(const FormatStyle &Style, StringRef Code,
     SearchFrom = Pos + 1;
   }
   if (!IncludesInBlock.empty()) {
-    fprintf(stderr, "IncludesInBlock2: ");
-    for (auto i:IncludesInBlock) {
-      fprintf(stderr, " '%s' ", i.Filename.str().c_str());
-    }
-    fprintf(stderr, "\n");
     sortCppIncludes(Style, IncludesInBlock, Ranges, FileName, Code, Replaces,
                     Cursor);
   }
@@ -3048,7 +3035,6 @@ formatReplacements(StringRef Code, const tooling::Replacements &Replaces,
 namespace {
 
 inline bool isHeaderInsertion(const tooling::Replacement &Replace) {
-  fprintf(stderr, "\n\n %s %10d \n\n", __FILE__, __LINE__);
   return Replace.getOffset() == UINT_MAX && Replace.getLength() == 0 &&
          llvm::Regex(CppIncludeRegexPattern)
              .match(Replace.getReplacementText());
@@ -3107,7 +3093,6 @@ fixCppIncludeInsertions(StringRef Code, const tooling::Replacements &Replaces,
     }
   }
 
-  fprintf(stderr, "\n\n %s %10d \n\n", __FILE__, __LINE__);
   llvm::Regex IncludeRegex = llvm::Regex(CppIncludeRegexPattern);
   llvm::SmallVector<StringRef, 4> Matches;
   for (const auto &R : HeaderInsertions) {
