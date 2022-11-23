@@ -83,6 +83,20 @@ if(CLANG_BUILT_STANDALONE)
   set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
 
   if(LLVM_INCLUDE_TESTS)
+    ### NEW:
+    find_package(LIT)
+    find_program(FILE_CHECK_PATH FileCheck PATHS ${LLVM_TOOLS_BINARY_DIR})
+    find_program(COUNT_PATH count PATHS ${LLVM_TOOLS_BINARY_DIR})
+    find_program(NOT_PATH not PATHS ${LLVM_TOOLS_BINARY_DIR})
+    
+    if (NOT LIT_FOUND 
+      OR (FILE_CHECK_PATH MATCHES "-NOTFOUND$")
+      OR (COUNT_PATH MATCHES "-NOTFOUND$")
+      OR (NOT_PATH MATCHES "-NOTFOUND$"))
+      message(FATAL_ERROR "Provide the follwing 4 test tools or disable LLVM_INCLUDE_TESTS: lit, FileCheck, count, and not")
+    endif()
+
+    ### OLD:
     find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
       COMPONENTS Interpreter)
 
