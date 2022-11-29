@@ -18,9 +18,17 @@
 # 
 #  ::
 # 
-#    LIT_FOUND  - true if lit was found
-#    LIT_PATH   - path to the lit executable (if found)
-#    LIT_TYPE   - can be "external", "in-source", or "system-provided"
+#    LIT_FOUND              - TRUE if lit was found
+#    LIT_PATH               - path to the lit executable (if found)
+#    LIT_VERSION            - version of lit (e.g. 15.0.0 or 14.0.0dev)
+#    LIT_TYPE               - can be "external", "in-source", or "system-provided"
+#    LIT_ARGS_DEFAULT       - contains the default LIT arguments and can be
+#                             overwritten by the user
+#    LLVM_LIT_ARGS          - 
+#    LLVM_LIT_ERRC_MESSAGES - Error messages for add_err_msg_substitutions() in
+#                             llvm/utils/lit/lit/llvm/config.py
+#    LLVM_LIT_TOOLS_DIR     - only on windows as an option to specify the path
+#                             to GnuWin32 tool
 
 set(LIT_FOUND FALSE)
 set(LIT_TYPE_EXTERNAL "external")
@@ -31,6 +39,8 @@ set(LIT_TYPE_SYSTEM_PROVIDED "system-provided")
 find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
   COMPONENTS Interpreter)
 
+unset(TMP_LIT_FOUND CACHE)
+
 # Check if an explicitly requested external lit shall be used.
 # This can happen when LLVM is build in standalone-mode package by package.
 if (LLVM_EXTERNAL_LIT)
@@ -38,7 +48,7 @@ if (LLVM_EXTERNAL_LIT)
     if (NOT EXISTS ${LLVM_EXTERNAL_LIT})
         message(WARNING "Failed to find external lit in: ${LLVM_EXTERNAL_LIT}")
     else()
-        set(LIT_FOUND TRUE)
+        set(TMP_LIT_FOUND TRUE)
         set(LIT_PATH ${LLVM_EXTERNAL_LIT})
         message(STATUS "Have external lit in: ${LIT_PATH}")
     endif()
@@ -47,7 +57,7 @@ else()
     set(in_source_lit ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
     if(EXISTS ${in_source_lit})
         set(LIT_TYPE LIT_TYPE_IN_SOURCE)
-        set(LIT_FOUND TRUE)
+        set(TMP_LIT_FOUND TRUE)
         set(LIT_PATH ${in_source_lit})
         message(STATUS "Have in-source lit in: ${LIT_PATH}")
     else()
@@ -59,7 +69,7 @@ else()
                     # PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
                     DOC "Path to system-provided lit")
         if (LitProgram)
-            set(LIT_FOUND TRUE)
+            set(TMP_LIT_FOUND TRUE)
             set(LIT_PATH ${LitProgram})
             message(STATUS "Found system-provided lit: ${LIT_PATH}")
         else()
@@ -68,7 +78,7 @@ else()
     endif()
 endif()
 
-if(LIT_FOUND)
+if(TMP_LIT_FOUND)
     # Define the default arguments to use with 'lit', and an option for the user
     # to override.
     set(LIT_ARGS_DEFAULT "-sv")
@@ -78,12 +88,20 @@ if(LIT_FOUND)
     set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
 
     get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-    set(LLVM_LIT_ERRC_MESSAGES ${LLVM_LIT_ERRC_MESSAGES} PARENT_SCOPE)
+    set(LLVM_LIT_ERRC_MESSAGES ${LLVM_LIT_ERRC_MESSAGES})
 
     # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
     if( WIN32 AND NOT CYGWIN )
-        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools" PARENT_SCOPE)
+        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
     endif()
+endif()
+
+# Determine lit version and clean it up (e.g. "lit 15.0.0" -> "15.0.0")
+if(TMP_LIT_FOUND)
+    execute_process(COMMAND ${LIT_PATH} --version
+                    OUTPUT_VARIABLE LIT_VERSION_VERSION_RAW_OUTPUT)
+    string(STRIP ${LIT_VERSION_VERSION_RAW_OUTPUT} LIT_VERSION_OUTPUT)
+    string(REPLACE "lit " "" LIT_VERSION ${LIT_VERSION_OUTPUT})
 endif()
 
 
@@ -93,7 +111,18 @@ find_package_handle_standard_args(LIT
                                     "Failed to find the LLVM integrated tester (LIT)"
                                   FOUND_VAR
                                     LIT_FOUND
+                                  VERSION_VAR
+                                    LIT_VERSION
                                   REQUIRED_VARS
                                     LIT_PATH
-                                    LIT_TYPE)
-mark_as_advanced(LIT_PATH LIT_TYPE)
+                                    LIT_TYPE
+                                    LIT_VERSION
+                                    LIT_ARGS_DEFAULT
+                                    LLVM_LIT_ARGS
+                                    LLVM_LIT_ERRC_MESSAGES)
+mark_as_advanced(LIT_PATH
+                 LIT_TYPE
+                 LIT_VERSION
+                 LIT_ARGS_DEFAULT
+                 LLVM_LIT_ARGS
+                 LLVM_LIT_ERRC_MESSAGES)
