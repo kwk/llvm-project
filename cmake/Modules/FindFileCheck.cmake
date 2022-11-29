@@ -10,8 +10,8 @@
 # 
 #  ::
 # 
-#    FileCheck_FOUND   - TRUE if lit was found
-#    FileCheck_PATH    - path to the lit executable (if found)
+#    FileCheck_FOUND   - TRUE if FileCheck was found
+#    FileCheck_PATH    - path to the FileCheck executable (if found)
 #    FileCheck_VERSION - version of the FileCheck tool (e.g. 15.0.0 or 14.0.1dev)
 
 find_program(FileCheck_PATH
