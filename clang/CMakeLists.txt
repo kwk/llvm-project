@@ -18,8 +18,7 @@ include(GNUInstallDirs)
 
 if(CLANG_BUILT_STANDALONE)
 
-  find_package(LLVM)
-  message(FATAL_ERROR "LLVM=${LLVM}")
+  find_package(LLVM COMPONENTS Exports)
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
