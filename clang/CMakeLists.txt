@@ -16,10 +16,10 @@ endif()
 # Must go below project(..)
 include(GNUInstallDirs)
 
-find_package(LLVMExports )
-message(FATAL_ERROR "LLVMExports_FOUND=${LLVMExports_FOUND}")
-
 if(CLANG_BUILT_STANDALONE)
+
+  find_package(LLVM)
+  message(FATAL_ERROR "LLVM=${LLVM}")
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
