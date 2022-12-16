@@ -23,23 +23,16 @@ endif()
 # Must go below project(..)
 include(GNUInstallDirs)
 
+# Make sure that our source directory is on the current cmake module path so that
+# we can include cmake files from this directory.
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+  )
+
 if(LLD_BUILT_STANDALONE)
-  set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
-  set(CMAKE_CXX_STANDARD_REQUIRED YES)
-  set(CMAKE_CXX_EXTENSIONS NO)
-
-  set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-  find_package(LLVM REQUIRED HINTS "${LLVM_CMAKE_DIR}")
-  list(APPEND CMAKE_MODULE_PATH "${LLVM_DIR}")
-
-  # Turn into CACHE PATHs for overwritting
-  set(LLVM_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS} CACHE PATH "Path to llvm/include and any other header dirs needed")
-  set(LLVM_BINARY_DIR "${LLVM_BINARY_DIR}" CACHE PATH "Path to LLVM build tree")
-  set(LLVM_MAIN_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../llvm" CACHE PATH "Path to LLVM source tree")
-
-  find_program(LLVM_TABLEGEN_EXE "llvm-tblgen" ${LLVM_TOOLS_BINARY_DIR}
-    NO_DEFAULT_PATH)
+  include(StandaloneBuildHelpers)
+  get_llvm_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
 
   # They are used as destination of target generators.
   set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
@@ -59,53 +52,17 @@ if(LLD_BUILT_STANDALONE)
   if(LLVM_INCLUDE_TESTS)
     find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
       COMPONENTS Interpreter)
+    find_external_lit()
+    set_lit_defaults()
+    get_llvm_utility_binary_path("FileCheck" "FileCheck_EXE")
+    get_llvm_utility_binary_path("count" "count_EXE")
+    get_llvm_utility_binary_path("not" "not_EXE")
 
-    # Check prebuilt llvm/utils.
-    if(EXISTS ${LLVM_TOOLS_BINARY_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/not${CMAKE_EXECUTABLE_SUFFIX})
-      set(LLVM_UTILS_PROVIDED ON)
-    endif()
-
-    if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-      # Note: path not really used, except for checking if lit was found
-      set(LLVM_LIT ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-      if(NOT LLVM_UTILS_PROVIDED)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/FileCheck utils/FileCheck)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/not utils/not)
-        set(LLVM_UTILS_PROVIDED ON)
-        set(LLD_TEST_DEPS FileCheck not)
-      endif()
-      set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
-      if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
-          AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
-          AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
-        add_subdirectory(${UNITTEST_DIR} third-party/unittest)
-      endif()
-    else()
-      # Seek installed Lit.
-      find_program(LLVM_LIT
-                   NAMES llvm-lit lit.py lit
-                   PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
-                   DOC "Path to lit.py")
-    endif()
-
-    if(LLVM_LIT)
-      # Define the default arguments to use with 'lit', and an option for the user
-      # to override.
-      set(LIT_ARGS_DEFAULT "-sv")
-      if (MSVC OR XCODE)
-        set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-      endif()
-      set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-
-      get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-
-      # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
-      if(WIN32 AND NOT CYGWIN)
-        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
-      endif()
-    else()
-      set(LLVM_INCLUDE_TESTS OFF)
+    set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
+    if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
+        AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
+        AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
+      add_subdirectory(${UNITTEST_DIR} third-party/unittest)
     endif()
   endif()
 
@@ -152,12 +109,6 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 "This process created the file `CMakeCache.txt' and the directory "
 "`CMakeFiles'. Please delete them.")
 endif()
-
-# Add path for custom modules.
-list(INSERT CMAKE_MODULE_PATH 0
-  "${LLD_SOURCE_DIR}/cmake/modules"
-  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
-  )
 
 include(AddLLD)
 

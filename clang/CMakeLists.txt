@@ -23,30 +23,16 @@ endif()
 # Must go below project(..)
 include(GNUInstallDirs)
 
+# Make sure that our source directory is on the current cmake module path so that
+# we can include cmake files from this directory.
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+  )
+
 if(CLANG_BUILT_STANDALONE)
-  set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
-  set(CMAKE_CXX_STANDARD_REQUIRED YES)
-  set(CMAKE_CXX_EXTENSIONS NO)
-
-  if(NOT MSVC_IDE)
-    set(LLVM_ENABLE_ASSERTIONS ${ENABLE_ASSERTIONS}
-      CACHE BOOL "Enable assertions")
-    # Assertions should follow llvm-config's.
-    mark_as_advanced(LLVM_ENABLE_ASSERTIONS)
-  endif()
-
-  find_package(LLVM REQUIRED HINTS "${LLVM_CMAKE_DIR}")
-  list(APPEND CMAKE_MODULE_PATH "${LLVM_DIR}")
-
-  # Turn into CACHE PATHs for overwritting
-  set(LLVM_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS} CACHE PATH "Path to llvm/include and any other header dirs needed")
-  set(LLVM_BINARY_DIR "${LLVM_BINARY_DIR}" CACHE PATH "Path to LLVM build tree")
-  set(LLVM_MAIN_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../llvm" CACHE PATH "Path to LLVM source tree")
-  set(LLVM_TOOLS_BINARY_DIR "${LLVM_TOOLS_BINARY_DIR}" CACHE PATH "Path to llvm/bin")
-  set(LLVM_LIBRARY_DIR "${LLVM_LIBRARY_DIR}" CACHE PATH "Path to llvm/lib")
-
-  find_program(LLVM_TABLEGEN_EXE "llvm-tblgen" ${LLVM_TOOLS_BINARY_DIR}
-    NO_DEFAULT_PATH)
+  include(StandaloneBuildHelpers)
+  get_llvm_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
 
   # They are used as destination of target generators.
   set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
@@ -92,69 +78,22 @@ if(CLANG_BUILT_STANDALONE)
   if(LLVM_INCLUDE_TESTS)
     find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
       COMPONENTS Interpreter)
+    find_external_lit()
+    set_lit_defaults()
+    get_llvm_utility_binary_path("FileCheck" "FileCheck_EXE")
+    get_llvm_utility_binary_path("count" "count_EXE")
+    get_llvm_utility_binary_path("not" "not_EXE")
 
-    # Check prebuilt llvm/utils.
-    if(EXISTS ${LLVM_TOOLS_BINARY_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/count${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/not${CMAKE_EXECUTABLE_SUFFIX})
-      set(LLVM_UTILS_PROVIDED ON)
-    endif()
-
-    # Seek installed Lit.
-    find_program(LLVM_LIT
-                 NAMES llvm-lit lit.py lit
-                 PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
-                 DOC "Path to lit.py")
-
-    if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-      # Note: path not really used, except for checking if lit was found
-      if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/llvm-lit)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/llvm-lit utils/llvm-lit)
-      endif()
-      if(NOT LLVM_UTILS_PROVIDED)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/FileCheck utils/FileCheck)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/count utils/count)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/not utils/not)
-        set(LLVM_UTILS_PROVIDED ON)
-        set(CLANG_TEST_DEPS FileCheck count not)
-      endif()
-      set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
-      if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
-          AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
-          AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
-        add_subdirectory(${UNITTEST_DIR} third-party/unittest)
-      endif()
-    endif()
-
-    if(LLVM_LIT)
-      # Define the default arguments to use with 'lit', and an option for the user
-      # to override.
-      set(LIT_ARGS_DEFAULT "-sv")
-      if (MSVC OR XCODE)
-        set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-      endif()
-      set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-
-      get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-
-      # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
-      if( WIN32 AND NOT CYGWIN )
-        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
-      endif()
-    else()
-      set(LLVM_INCLUDE_TESTS OFF)
+    set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
+    if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
+        AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
+        AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
+      add_subdirectory(${UNITTEST_DIR} third-party/unittest)
     endif()
 
     umbrella_lit_testsuite_begin(check-all)
   endif() # LLVM_INCLUDE_TESTS
 endif() # standalone
-
-# Make sure that our source directory is on the current cmake module path so that
-# we can include cmake files from this directory.
-list(INSERT CMAKE_MODULE_PATH 0
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
-  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
-  )
 
 # This allows disabling clang's XML dependency even if LLVM finds libxml2.
 # By default, clang depends on libxml2 if LLVM does.
