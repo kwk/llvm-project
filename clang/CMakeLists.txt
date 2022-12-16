@@ -19,11 +19,12 @@ include(GNUInstallDirs)
 if(CLANG_BUILT_STANDALONE)
 
   find_package(LLVM
-    COMPONENTS
+    REQUIRED COMPONENTS
       "FileCheck"
       "not"
-      "count" 
-    REQUIRED)
+      "count"
+      "non-existent-binary"
+    )
   message(FATAL_ERROR "LLVM_FOUND=${LLVM_FOUND}")
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
