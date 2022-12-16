@@ -17,6 +17,10 @@ endif()
 include(GNUInstallDirs)
 
 if(CLANG_BUILT_STANDALONE)
+  find_package(LLVMExports )
+
+  message(FATAL_ERROR "LLVMExports_FOUND=${LLVMExports_FOUND}")
+
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
   set(CMAKE_CXX_EXTENSIONS NO)
