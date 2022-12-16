@@ -20,9 +20,6 @@ if(CLANG_BUILT_STANDALONE)
 
   find_package(LLVM
     REQUIRED COMPONENTS
-      "FileCheck"
-      "not"
-      "count"
       "non-existent-binary"
     )
   message(FATAL_ERROR "LLVM_FOUND=${LLVM_FOUND}")
