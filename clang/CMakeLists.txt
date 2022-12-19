@@ -24,7 +24,7 @@ if(CLANG_BUILT_STANDALONE)
 
   set(MY_IMPORTED_LOCATION $<$<CONFIG:Release>:IMPORTED_LOCATION_RELEASE>)
   get_target_property(FileCheck_EXE2 FileCheck ${MY_IMPORTED_LOCATION})
-  message(STATUS "FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
+  message(STATUS "MY_IMPORTED_LOCATION=${MY_IMPORTED_LOCATION} FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
   
 
   message(FATAL_ERROR "Ending")
