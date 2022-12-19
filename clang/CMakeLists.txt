@@ -22,9 +22,8 @@ if(CLANG_BUILT_STANDALONE)
   get_target_property(FileCheck_EXE FileCheck IMPORTED_LOCATION_RELEASE)
   message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
 
-  set(MY_IMPORTED_LOCATION $<$<CONFIG:Release>:IMPORTED_LOCATION_RELEASE>)
-  get_target_property(FileCheck_EXE2 FileCheck ${MY_IMPORTED_LOCATION})
-  message(STATUS "MY_IMPORTED_LOCATION=${MY_IMPORTED_LOCATION} FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
+  get_target_property(FileCheck_EXE2 FileCheck IMPORTED_LOCATION_<CONFIG>)
+  message(STATUS "IMPORTED_LOCATION_<CONFIG>=${IMPORTED_LOCATION_<CONFIG>} FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
   
 
   message(FATAL_ERROR "Ending")
