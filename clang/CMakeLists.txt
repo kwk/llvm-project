@@ -23,7 +23,7 @@ if(CLANG_BUILT_STANDALONE)
   message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
 
   get_target_property(FileCheck_EXE2 FileCheck IMPORTED_LOCATION_<CONFIG>)
-  message(STATUS "IMPORTED_LOCATION_<CONFIG>=${IMPORTED_LOCATION_<CONFIG>} FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
+  message(STATUS "FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
   
 
   message(FATAL_ERROR "Ending")
