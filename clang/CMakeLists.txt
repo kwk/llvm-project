@@ -39,6 +39,8 @@ if(CLANG_BUILT_STANDALONE)
   message(STATUS "FileCheck_EXE20=${FileCheck_EXE20}")
   get_target_property(FileCheck_EXE30 FileCheck IMPORTED_LOCATION)
   message(STATUS "FileCheck_EXE30=${FileCheck_EXE30}")
+  get_target_property(FileCheck_EXE30000 FileCheck IMPORTED_LOCATION_RELEASE)
+  message(STATUS "FileCheck_EXE30000=${FileCheck_EXE30000}")
 
   get_target_property(FileCheck_EXE1000 LLVMFileCheck IMPORTED_LOCATION_RELWITHDEBINFO)
   message(STATUS "FileCheck_EXE1000=${FileCheck_EXE1000}")
