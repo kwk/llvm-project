@@ -19,7 +19,7 @@ include(GNUInstallDirs)
 if(CLANG_BUILT_STANDALONE)
 
   find_package(LLVM REQUIRED)
-  get_target_property(FileCheck_EXE LLVMExports::FileCheck IMPORTED_LOCATION_$<UPPER_CASE:$CMAKE_BUILD_TYPE>)
+  get_target_property(FileCheck_EXE LLVMExports::FileCheck IMPORTED_LOCATION_RELEASE)
   message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
   message(FATAL_ERROR "Ending")
 
