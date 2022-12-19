@@ -18,18 +18,9 @@ include(GNUInstallDirs)
 
 if(CLANG_BUILT_STANDALONE)
 
-  find_package(LLVM
-  REQUIRED COMPONENTS
-    "FileCheck"
-    "not"
-    "count"
-    "non_existing_binary"
-  )
-  message(STATUS "LLVM_FOUND=${LLVM_FOUND}")
-  message(STATUS "LLVM_FIND_REQUIRED_FileCheck=${LLVM_FIND_REQUIRED_FileCheck}")
-  message(STATUS "LLVM_FIND_REQUIRED_not=${LLVM_FIND_REQUIRED_not}")
-  message(STATUS "LLVM_FIND_REQUIRED_count=${LLVM_FIND_REQUIRED_count}")
-  message(STATUS "LLVM_FIND_REQUIRED_non_existing_binary=${LLVM_FIND_REQUIRED_non_existing_binary}")
+  find_package(LLVM REQUIRED)
+  get_target_property(FileCheck_EXE LLVMExports::FileCheck IMPORTED_LOCATION_$<UPPER_CASE:$CMAKE_BUILD_TYPE>)
+  message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
   message(FATAL_ERROR "Ending")
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
