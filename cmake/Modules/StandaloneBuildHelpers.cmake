@@ -1,13 +1,15 @@
+# This file provides helper functions for projects that can be built in
+# standalone mode which you often find in packaging situations.
+
 include_guard()
 
 # NOTE: The reason to first run `find_package(LLVM)` is that all the imported
 #       executables in LLVMExports.cmake are checked for existence. This saves
 #       us from checking for them ourselves.
-# WARNING: This function only makes sense when building in standalone mode.
+# WARNING: The functions in this file only makes sense when building in standalone mode.
 #          Therefore it raises a FATAL_ERROR if you're using it in some other
 #          context.
-
-if (NOT (CLANG_BUILT_STANDALONE OR LLD_BUILT_STANDALONE))
+if (NOT (CLANG_BUILT_STANDALONE OR LLD_BUILT_STANDALONE OR COMPILER_RT_STANDALONE_BUILD OR OPENMP_STANDALONE_BUILD OR MLIR_STANDALONE_BUILD))
     message(FATAL_ERROR "Make sure you build in standalone mode")
 endif()
 find_package(LLVM REQUIRED)
@@ -26,13 +28,15 @@ find_package(LLVM REQUIRED)
 #       installed with LLVM. Your utility target must be define there.
 function(llvm_get_utility_binary_path utility out_var)
     set(_imploc IMPORTED_LOCATION_NOCONFIG)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Based on the build type that LLVM was built with, we pick the right
+    # import location.
+    if (LLVM_BUILD_TYPE STREQUAL "Release")
         set(_imploc IMPORTED_LOCATION_RELEASE)
-    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    elseif (LLVM_BUILD_TYPE STREQUAL "Debug")
         set(_imploc IMPORTED_LOCATION_DEBUG)
-    elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    elseif (LLVM_BUILD_TYPE STREQUAL "RelWithDebInfo")
         set(_imploc IMPORTED_LOCATION_RELWITHDEBINFO)
-    elseif (CMAKE_BUILD_TYPE STREQUAL "MinSize")
+    elseif (LLVM_BUILD_TYPE STREQUAL "MinSize")
         set(_imploc IMPORTED_LOCATION_MINSIZE)
     endif()
     if (TARGET ${utility})

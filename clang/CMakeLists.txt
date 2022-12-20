@@ -25,17 +25,7 @@ list(INSERT CMAKE_MODULE_PATH 0
 
 if(CLANG_BUILT_STANDALONE)
   include(StandaloneBuildHelpers)
-  llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
   llvm_get_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
-  llvm_get_utility_binary_path("count" "count_EXE")
-  llvm_get_utility_binary_path("not" "not_EXE")
-  
-  message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
-  message(STATUS "count_EXE=${count_EXE}")
-  message(STATUS "not_EXE=${not_EXE}")
-  message(STATUS "LLVM_TABLEGEN_EXE=${LLVM_TABLEGEN_EXE}")
-
-  message(FATAL_ERROR "Ending")
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
@@ -100,47 +90,18 @@ if(CLANG_BUILT_STANDALONE)
   set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
 
   if(LLVM_INCLUDE_TESTS)
-    find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
-      COMPONENTS Interpreter)
+    
+    find_package(LIT REQUIRED)
+    
+    llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
+    llvm_get_utility_binary_path("count" "count_EXE")
+    llvm_get_utility_binary_path("not" "not_EXE")
 
-
-
-      # Seek installed Lit.
-    find_program(LLVM_LIT
-                 NAMES llvm-lit lit.py lit
-                 PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
-                 DOC "Path to lit.py")
-
-    if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-      # Note: path not really used, except for checking if lit was found
-      if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/llvm-lit)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/llvm-lit utils/llvm-lit)
-      endif()
-      set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
-      if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
-          AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
-          AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
-        add_subdirectory(${UNITTEST_DIR} third-party/unittest)
-      endif()
-    endif()
-
-    if(LLVM_LIT)
-      # Define the default arguments to use with 'lit', and an option for the user
-      # to override.
-      set(LIT_ARGS_DEFAULT "-sv")
-      if (MSVC OR XCODE)
-        set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-      endif()
-      set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-
-      get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-
-      # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
-      if( WIN32 AND NOT CYGWIN )
-        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
-      endif()
-    else()
-      set(LLVM_INCLUDE_TESTS OFF)
+    set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
+    if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
+        AND NOT EXISTS ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
+        AND EXISTS ${UNITTEST_DIR}/CMakeLists.txt)
+      add_subdirectory(${UNITTEST_DIR} third-party/unittest)
     endif()
 
     umbrella_lit_testsuite_begin(check-all)
