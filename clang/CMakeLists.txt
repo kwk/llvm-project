@@ -90,9 +90,16 @@ if(CLANG_BUILT_STANDALONE)
   set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
 
   if(LLVM_INCLUDE_TESTS)
-    
-    find_package(LIT REQUIRED)
-    
+    find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
+    COMPONENTS Interpreter)
+
+    if (NOT DEFINED LLVM_EXTERNAL_LIT)
+      message(FATAL_ERROR "In standalone mode you MUST configure with -DLLVM_EXTERNAL_LIT=... pointing to your lit binary")
+    endif()
+    if (NOT EXISTS ${LLVM_EXTERNAL_LIT})
+      message(FATAL_ERROR "Failed to find external lit in: ${LLVM_EXTERNAL_LIT}")
+    endif()
+
     llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
     llvm_get_utility_binary_path("count" "count_EXE")
     llvm_get_utility_binary_path("not" "not_EXE")
