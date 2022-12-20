@@ -16,27 +16,24 @@ endif()
 # Must go below project(..)
 include(GNUInstallDirs)
 
+# Make sure that our source directory is on the current cmake module path so that
+# we can include cmake files from this directory.
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+  )
+
 if(CLANG_BUILT_STANDALONE)
-
-  find_package(LLVM REQUIRED)
-  set(_imploc IMPORTED_LOCATION_NOCONFIG)
-  if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(_imploc IMPORTED_LOCATION_RELEASE)
-  elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(_imploc IMPORTED_LOCATION_DEBUG)
-  elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    set(_imploc IMPORTED_LOCATION_RELWITHDEBINFO)
-  elseif (CMAKE_BUILD_TYPE STREQUAL "MinSize")
-    set(_imploc IMPORTED_LOCATION_MINSIZE)
-  endif()
-  get_target_property(FileCheck_EXE "FileCheck" ${_imploc})
-  get_target_property(count_EXE "count" ${_imploc})
-  get_target_property(not_EXE "not" ${_imploc})
-  unset(_imploc)
-
+  include(StandaloneBuildHelpers)
+  llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
+  llvm_get_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
+  llvm_get_utility_binary_path("count" "count_EXE")
+  llvm_get_utility_binary_path("not" "not_EXE")
+  
   message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
   message(STATUS "count_EXE=${count_EXE}")
-  message(STATUS "not_EXE=${not_EXE}")  
+  message(STATUS "not_EXE=${not_EXE}")
+  message(STATUS "LLVM_TABLEGEN_EXE=${LLVM_TABLEGEN_EXE}")
 
   message(FATAL_ERROR "Ending")
 
@@ -60,9 +57,6 @@ if(CLANG_BUILT_STANDALONE)
   set(LLVM_MAIN_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../llvm" CACHE PATH "Path to LLVM source tree")
   set(LLVM_TOOLS_BINARY_DIR "${LLVM_TOOLS_BINARY_DIR}" CACHE PATH "Path to llvm/bin")
   set(LLVM_LIBRARY_DIR "${LLVM_LIBRARY_DIR}" CACHE PATH "Path to llvm/lib")
-
-  find_program(LLVM_TABLEGEN_EXE "llvm-tblgen" ${LLVM_TOOLS_BINARY_DIR}
-    NO_DEFAULT_PATH)
 
   # They are used as destination of target generators.
   set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
@@ -109,14 +103,9 @@ if(CLANG_BUILT_STANDALONE)
     find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
       COMPONENTS Interpreter)
 
-    # Check prebuilt llvm/utils.
-    if(EXISTS ${LLVM_TOOLS_BINARY_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/count${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/not${CMAKE_EXECUTABLE_SUFFIX})
-      set(LLVM_UTILS_PROVIDED ON)
-    endif()
 
-    # Seek installed Lit.
+
+      # Seek installed Lit.
     find_program(LLVM_LIT
                  NAMES llvm-lit lit.py lit
                  PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
@@ -126,13 +115,6 @@ if(CLANG_BUILT_STANDALONE)
       # Note: path not really used, except for checking if lit was found
       if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/llvm-lit)
         add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/llvm-lit utils/llvm-lit)
-      endif()
-      if(NOT LLVM_UTILS_PROVIDED)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/FileCheck utils/FileCheck)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/count utils/count)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/not utils/not)
-        set(LLVM_UTILS_PROVIDED ON)
-        set(CLANG_TEST_DEPS FileCheck count not)
       endif()
       set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
       if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
@@ -164,13 +146,6 @@ if(CLANG_BUILT_STANDALONE)
     umbrella_lit_testsuite_begin(check-all)
   endif() # LLVM_INCLUDE_TESTS
 endif() # standalone
-
-# Make sure that our source directory is on the current cmake module path so that
-# we can include cmake files from this directory.
-list(INSERT CMAKE_MODULE_PATH 0
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
-  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
-  )
 
 # This allows disabling clang's XML dependency even if LLVM finds libxml2.
 # By default, clang depends on libxml2 if LLVM does.
