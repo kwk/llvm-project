@@ -91,31 +91,9 @@ if(CLANG_BUILT_STANDALONE)
 
   if(LLVM_INCLUDE_TESTS)
     find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
-    COMPONENTS Interpreter)
-
-    if (NOT DEFINED LLVM_EXTERNAL_LIT)
-      message(FATAL_ERROR "In standalone build mode you MUST configure with -DLLVM_EXTERNAL_LIT=... pointing to your lit binary")
-    endif()
-    if (NOT EXISTS ${LLVM_EXTERNAL_LIT})
-      message(FATAL_ERROR "Failed to find external lit in: ${LLVM_EXTERNAL_LIT}")
-    endif()
-
-    # Define the default arguments to use with 'lit', and an option for the user
-    # to override.
-    set(LIT_ARGS_DEFAULT "-sv")
-    if (MSVC OR XCODE)
-      set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-    endif()
-    set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-  
-    get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-    set(LLVM_LIT_ERRC_MESSAGES ${LLVM_LIT_ERRC_MESSAGES})
-  
-    # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
-    if( WIN32 AND NOT CYGWIN )
-      set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
-    endif()
-
+      COMPONENTS Interpreter)
+    find_external_lit()
+    set_lit_defaults()
     llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
     llvm_get_utility_binary_path("count" "count_EXE")
     llvm_get_utility_binary_path("not" "not_EXE")

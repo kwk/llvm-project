@@ -38,12 +38,6 @@ For tools, please do:
     "${LLVM_COMMON_CMAKE_UTILS}/Modules"
     )
 
-  # Add path for custom find_package config files ()
-  list(INSERT CMAKE_PREFIX_PATH 0
-    # project-specific config dirs first
-    "${LLVM_COMMON_CMAKE_UTILS}"
-    )
-
 Notes:
 
 - The ``if(NOT DEFINED ...)`` guard is there because in combined builds, LLVM
