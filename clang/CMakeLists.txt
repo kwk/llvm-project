@@ -22,7 +22,8 @@ if(CLANG_BUILT_STANDALONE)
   get_target_property(FileCheck_EXE FileCheck IMPORTED_LOCATION_RELEASE)
   message(STATUS "FileCheck_EXE=${FileCheck_EXE}")
 
-  get_target_property(FileCheck_EXE2 FileCheck IMPORTED_LOCATION_<CONFIG>)
+  set(fooooo IMPORTED_LOCATION_RELEASE)
+  get_target_property(FileCheck_EXE2 FileCheck ${fooooo})
   message(STATUS "FileCheck_EXEGeneratorExpression=${FileCheck_EXE2}")
   
 
