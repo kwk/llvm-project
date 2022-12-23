@@ -9,7 +9,7 @@ include_guard()
 # WARNING: The functions in this file only makes sense when building in standalone mode.
 #          Therefore it raises a FATAL_ERROR if you're using it in some other
 #          context.
-if (NOT (CLANG_BUILT_STANDALONE OR LLD_BUILT_STANDALONE OR COMPILER_RT_STANDALONE_BUILD OR OPENMP_STANDALONE_BUILD OR MLIR_STANDALONE_BUILD))
+if (NOT (CLANG_BUILT_STANDALONE OR LLD_BUILT_STANDALONE OR COMPILER_RT_STANDALONE_BUILD OR OPENMP_STANDALONE_BUILD OR MLIR_STANDALONE_BUILD OR LLDB_BUILT_STANDALONE))
     message(FATAL_ERROR "Make sure you build in standalone mode")
 endif()
 find_package(LLVM REQUIRED)
@@ -26,7 +26,7 @@ find_package(LLVM REQUIRED)
 #       utilities are added. They get added to a global list property 
 #       LLVM_EXPORTS which ends up in a file LLVMExports.cmake that is
 #       installed with LLVM. Your utility target must be define there.
-function(llvm_get_utility_binary_path utility out_var)
+function(get_llvm_utility_binary_path utility out_var)
     set(_imploc IMPORTED_LOCATION_NOCONFIG)
     # Based on the build type that LLVM was built with, we pick the right
     # import location.

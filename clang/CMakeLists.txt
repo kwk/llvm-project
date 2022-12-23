@@ -25,7 +25,7 @@ list(INSERT CMAKE_MODULE_PATH 0
 
 if(CLANG_BUILT_STANDALONE)
   include(StandaloneBuildHelpers)
-  llvm_get_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
+  get_llvm_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
 
   set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
@@ -94,9 +94,9 @@ if(CLANG_BUILT_STANDALONE)
       COMPONENTS Interpreter)
     find_external_lit()
     set_lit_defaults()
-    llvm_get_utility_binary_path("FileCheck" "FileCheck_EXE")
-    llvm_get_utility_binary_path("count" "count_EXE")
-    llvm_get_utility_binary_path("not" "not_EXE")
+    get_llvm_utility_binary_path("FileCheck" "FileCheck_EXE")
+    get_llvm_utility_binary_path("count" "count_EXE")
+    get_llvm_utility_binary_path("not" "not_EXE")
 
     set(UNITTEST_DIR ${LLVM_THIRD_PARTY_DIR}/unittest)
     if(EXISTS ${UNITTEST_DIR}/googletest/include/gtest/gtest.h
