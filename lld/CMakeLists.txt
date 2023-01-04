@@ -16,6 +16,13 @@ endif()
 # Must go below project(..)
 include(GNUInstallDirs)
 
+# Make sure that our source directory is on the current cmake module path so that
+# we can include cmake files from this directory.
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+  )
+
 if(LLD_BUILT_STANDALONE)
   include(StandaloneBuildHelpers)
   get_llvm_utility_binary_path("llvm-tblgen" "LLVM_TABLEGEN_EXE")
