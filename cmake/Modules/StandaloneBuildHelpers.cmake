@@ -89,7 +89,7 @@ macro(set_lit_defaults)
     set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
   
     get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-    set(LLVM_LIT_ERRC_MESSAGES ${LLVM_LIT_ERRC_MESSAGES} PARENT_SCOPE)
+    set(LLVM_LIT_ERRC_MESSAGES ${LLVM_LIT_ERRC_MESSAGES})
   
     # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
     if( WIN32 AND NOT CYGWIN )
