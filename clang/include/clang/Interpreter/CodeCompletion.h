@@ -25,9 +25,6 @@ class CompilerInstance;
 
 void codeComplete(CompilerInstance *InterpCI, llvm::StringRef Content,
                   unsigned Line, unsigned Col, const CompilerInstance *ParentCI,
-                  std::vector<CodeCompletionResult> &CCResults);
-
-std::vector<std::string>
-convertToCodeCompleteStrings(const std::vector<CodeCompletionResult> &Results);
+                  std::vector<std::string> &CCResults);
 } // namespace clang
 #endif

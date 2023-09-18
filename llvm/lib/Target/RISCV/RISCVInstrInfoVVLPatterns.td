@@ -586,9 +586,10 @@ def Low8BitsSplatPat
 
 def SelectFPImm : ComplexPattern<fAny, 1, "selectFPImm", [], [], 1>;
 
-// Ignore the vl operand.
-def SplatFPOp : PatFrag<(ops node:$op),
-                        (riscv_vfmv_v_f_vl undef, node:$op, srcvalue)>;
+// Ignore the vl operand on vmv_v_f, and vmv_s_f.
+def SplatFPOp : PatFrags<(ops node:$op),
+                         [(riscv_vfmv_v_f_vl undef, node:$op, srcvalue),
+                          (riscv_vfmv_s_f_vl undef, node:$op, srcvalue)]>;
 
 def sew8simm5  : ComplexPattern<XLenVT, 1, "selectRVVSimm5<8>",  []>;
 def sew16simm5 : ComplexPattern<XLenVT, 1, "selectRVVSimm5<16>", []>;
@@ -2466,9 +2467,10 @@ foreach vti = AllFloatVectors in {
 
     // 14.14. Vector Floating-Point Classify Instruction
     def : Pat<(riscv_fclass_vl (vti.Vector vti.RegClass:$rs2),
-                               (vti.Mask true_mask), VLOpFrag),
-              (!cast<Instruction>("PseudoVFCLASS_V_"# vti.LMul.MX)
-                 (vti.Vector (IMPLICIT_DEF)), vti.RegClass:$rs2, GPR:$vl, vti.Log2SEW, TA_MA)>;
+                               (vti.Mask V0), VLOpFrag),
+              (!cast<Instruction>("PseudoVFCLASS_V_"# vti.LMul.MX #"_MASK")
+                 (vti.Vector (IMPLICIT_DEF)), vti.RegClass:$rs2, 
+                 (vti.Mask V0), GPR:$vl, vti.Log2SEW, TA_MA)>;
   }
 }
 

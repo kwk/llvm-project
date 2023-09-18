@@ -2474,7 +2474,18 @@ static bool valueIsKnownNeverF32Denorm(SDValue Src) {
   case ISD::FP_EXTEND:
     return Src.getOperand(0).getValueType() == MVT::f16;
   case ISD::FP16_TO_FP:
+  case ISD::FFREXP:
     return true;
+  case ISD::INTRINSIC_WO_CHAIN: {
+    unsigned IntrinsicID =
+        cast<ConstantSDNode>(Src.getOperand(0))->getZExtValue();
+    switch (IntrinsicID) {
+    case Intrinsic::amdgcn_frexp_mant:
+      return true;
+    default:
+      return false;
+    }
+  }
   default:
     return false;
   }
@@ -2482,15 +2493,17 @@ static bool valueIsKnownNeverF32Denorm(SDValue Src) {
   llvm_unreachable("covered opcode switch");
 }
 
-static bool allowApproxFunc(const SelectionDAG &DAG, SDNodeFlags Flags) {
+bool AMDGPUTargetLowering::allowApproxFunc(const SelectionDAG &DAG,
+                                           SDNodeFlags Flags) {
   if (Flags.hasApproximateFuncs())
     return true;
   auto &Options = DAG.getTarget().Options;
   return Options.UnsafeFPMath || Options.ApproxFuncFPMath;
 }
 
-static bool needsDenormHandlingF32(const SelectionDAG &DAG, SDValue Src,
-                                   SDNodeFlags Flags) {
+bool AMDGPUTargetLowering::needsDenormHandlingF32(const SelectionDAG &DAG,
+                                                  SDValue Src,
+                                                  SDNodeFlags Flags) {
   return !valueIsKnownNeverF32Denorm(Src) &&
          DAG.getMachineFunction()
                  .getDenormalMode(APFloat::IEEEsingle())
@@ -3732,8 +3745,7 @@ SDValue AMDGPUTargetLowering::performIntrinsicWOChainCombine(
   case Intrinsic::amdgcn_rsq:
   case Intrinsic::amdgcn_rcp_legacy:
   case Intrinsic::amdgcn_rsq_legacy:
-  case Intrinsic::amdgcn_rsq_clamp:
-  case Intrinsic::amdgcn_ldexp: {
+  case Intrinsic::amdgcn_rsq_clamp: {
     // FIXME: This is probably wrong. If src is an sNaN, it won't be quieted
     SDValue Src = N->getOperand(1);
     return Src.isUndef() ? Src : SDValue();
@@ -4046,8 +4058,7 @@ static SDValue getAddOneOp(const SDNode *V) {
   if (V->getOpcode() != ISD::ADD)
     return SDValue();
 
-  auto *C = dyn_cast<ConstantSDNode>(V->getOperand(1));
-  return C && C->isOne() ? V->getOperand(0) : SDValue();
+  return isOneConstant(V->getOperand(1)) ? V->getOperand(0) : SDValue();
 }
 
 SDValue AMDGPUTargetLowering::performMulCombine(SDNode *N,
@@ -4277,8 +4288,7 @@ SDValue AMDGPUTargetLowering::getFFBX_U32(SelectionDAG &DAG,
 SDValue AMDGPUTargetLowering::performCtlz_CttzCombine(const SDLoc &SL, SDValue Cond,
                                                  SDValue LHS, SDValue RHS,
                                                  DAGCombinerInfo &DCI) const {
-  ConstantSDNode *CmpRhs = dyn_cast<ConstantSDNode>(Cond.getOperand(1));
-  if (!CmpRhs || !CmpRhs->isZero())
+  if (!isNullConstant(Cond.getOperand(1)))
     return SDValue();
 
   SelectionDAG &DAG = DCI.DAG;

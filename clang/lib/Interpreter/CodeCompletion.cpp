@@ -39,7 +39,7 @@ clang::CodeCompleteOptions getClangCompleteOpts() {
 
 class ReplCompletionConsumer : public CodeCompleteConsumer {
 public:
-  ReplCompletionConsumer(std::vector<CodeCompletionResult> &Results)
+  ReplCompletionConsumer(std::vector<std::string> &Results)
       : CodeCompleteConsumer(getClangCompleteOpts()),
         CCAllocator(std::make_shared<GlobalCodeCompletionAllocator>()),
         CCTUInfo(CCAllocator), Results(Results){};
@@ -55,7 +55,7 @@ public:
 private:
   std::shared_ptr<GlobalCodeCompletionAllocator> CCAllocator;
   CodeCompletionTUInfo CCTUInfo;
-  std::vector<CodeCompletionResult> &Results;
+  std::vector<std::string> &Results;
 };
 
 void ReplCompletionConsumer::ProcessCodeCompleteResults(
@@ -65,37 +65,17 @@ void ReplCompletionConsumer::ProcessCodeCompleteResults(
     auto &Result = InResults[I];
     switch (Result.Kind) {
     case CodeCompletionResult::RK_Declaration:
-      if (Result.Declaration->getIdentifier()) {
-        Results.push_back(Result);
+      if (auto *ID = Result.Declaration->getIdentifier()) {
+        Results.push_back(ID->getName().str());
       }
       break;
     case CodeCompletionResult::RK_Keyword:
-      Results.push_back(Result);
+      Results.push_back(Result.Keyword);
       break;
     default:
       break;
     }
   }
-}
-
-std::vector<std::string> convertToCodeCompleteStrings(
-    const std::vector<clang::CodeCompletionResult> &Results) {
-  std::vector<std::string> CompletionStrings;
-  for (auto Res : Results) {
-    switch (Res.Kind) {
-    case clang::CodeCompletionResult::RK_Declaration:
-      if (auto *ID = Res.Declaration->getIdentifier()) {
-        CompletionStrings.push_back(ID->getName().str());
-      }
-      break;
-    case clang::CodeCompletionResult::RK_Keyword:
-      CompletionStrings.push_back(Res.Keyword);
-      break;
-    default:
-      break;
-    }
-  }
-  return CompletionStrings;
 }
 
 class IncrementalSyntaxOnlyAction : public SyntaxOnlyAction {
@@ -199,26 +179,28 @@ void ExternalSource::completeVisibleDeclsMap(
 
 void codeComplete(CompilerInstance *InterpCI, llvm::StringRef Content,
                   unsigned Line, unsigned Col, const CompilerInstance *ParentCI,
-                  std::vector<CodeCompletionResult> &CCResults) {
-  std::unique_ptr<llvm::MemoryBuffer> MB =
-      llvm::MemoryBuffer::getMemBufferCopy(Content, CodeCompletionFileName);
-  llvm::SmallVector<ASTUnit::RemappedFile, 4> RemappedFiles;
-
-  RemappedFiles.push_back(std::make_pair(CodeCompletionFileName, MB.release()));
-
+                  std::vector<std::string> &CCResults) {
   auto DiagOpts = DiagnosticOptions();
   auto consumer = ReplCompletionConsumer(CCResults);
 
   auto diag = InterpCI->getDiagnosticsPtr();
-  ASTUnit *AU = ASTUnit::LoadFromCompilerInvocationAction(
+  std::unique_ptr<ASTUnit> AU(ASTUnit::LoadFromCompilerInvocationAction(
       InterpCI->getInvocationPtr(), std::make_shared<PCHContainerOperations>(),
-      diag);
+      diag));
   llvm::SmallVector<clang::StoredDiagnostic, 8> sd = {};
   llvm::SmallVector<const llvm::MemoryBuffer *, 1> tb = {};
   InterpCI->getFrontendOpts().Inputs[0] = FrontendInputFile(
       CodeCompletionFileName, Language::CXX, InputKind::Source);
   auto Act = std::unique_ptr<IncrementalSyntaxOnlyAction>(
       new IncrementalSyntaxOnlyAction(ParentCI));
+  std::unique_ptr<llvm::MemoryBuffer> MB =
+      llvm::MemoryBuffer::getMemBufferCopy(Content, CodeCompletionFileName);
+  llvm::SmallVector<ASTUnit::RemappedFile, 4> RemappedFiles;
+
+  RemappedFiles.push_back(std::make_pair(CodeCompletionFileName, MB.get()));
+  // we don't want the AU destructor to release the memory buffer that MB
+  // owns twice, because MB handles its resource on its own.
+  AU->setOwnsRemappedFileBuffers(false);
   AU->CodeComplete(CodeCompletionFileName, 1, Col, RemappedFiles, false, false,
                    false, consumer,
                    std::make_shared<clang::PCHContainerOperations>(), *diag,

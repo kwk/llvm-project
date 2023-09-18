@@ -15,7 +15,6 @@
 #include "clang/Frontend/FrontendDiagnostic.h"
 #include "clang/Interpreter/CodeCompletion.h"
 #include "clang/Interpreter/Interpreter.h"
-#include "clang/Sema/CodeCompleteConsumer.h"
 
 #include "llvm/ExecutionEngine/Orc/LLJIT.h"
 #include "llvm/LineEditor/LineEditor.h"
@@ -98,7 +97,7 @@ std::vector<llvm::LineEditor::Completion>
 ReplListCompleter::operator()(llvm::StringRef Buffer, size_t Pos,
                               llvm::Error &ErrRes) const {
   std::vector<llvm::LineEditor::Completion> Comps;
-  std::vector<clang::CodeCompletionResult> Results;
+  std::vector<std::string> Results;
 
   auto CI = CB.CreateCpp();
   if (auto Err = CI.takeError()) {
@@ -122,16 +121,16 @@ ReplListCompleter::operator()(llvm::StringRef Buffer, size_t Pos,
       Buffer, Lines, Pos + 1, MainInterp.getCompilerInstance(), Results);
 
   size_t space_pos = Buffer.rfind(" ");
-  llvm::StringRef s;
+  llvm::StringRef Prefix;
   if (space_pos == llvm::StringRef::npos) {
-    s = Buffer;
+    Prefix = Buffer;
   } else {
-    s = Buffer.substr(space_pos + 1);
+    Prefix = Buffer.substr(space_pos + 1);
   }
 
-  for (auto c : convertToCodeCompleteStrings(Results)) {
-    if (c.find(s) == 0)
-      Comps.push_back(llvm::LineEditor::Completion(c.substr(s.size()), c));
+  for (auto c : Results) {
+    if (c.find(Prefix) == 0)
+      Comps.push_back(llvm::LineEditor::Completion(c.substr(Prefix.size()), c));
   }
   return Comps;
 }
@@ -153,7 +152,9 @@ int main(int argc, const char **argv) {
   llvm::InitializeAllAsmPrinters();
 
   if (OptHostSupportsJit) {
-    auto J = llvm::orc::LLJITBuilder().create();
+    auto J = llvm::orc::LLJITBuilder()
+               .setEnableDebuggerSupport(true)
+               .create();
     if (J)
       llvm::outs() << "true\n";
     else {

@@ -156,8 +156,14 @@ function(create_libc_unittest fq_target_name)
   )
   target_compile_options(
     ${fq_build_target_name}
-    PRIVATE -fpie -ffreestanding ${LIBC_COMPILE_OPTIONS_DEFAULT}
+    PRIVATE -fpie ${LIBC_COMPILE_OPTIONS_DEFAULT}
   )
+  if(LLVM_LIBC_FULL_BUILD)
+    target_compile_options(
+      ${fq_build_target_name}
+      PRIVATE -ffreestanding
+    )
+  endif()
   if(LIBC_UNITTEST_COMPILE_OPTIONS)
     target_compile_options(
       ${fq_build_target_name}
@@ -522,7 +528,8 @@ function(add_integration_test test_name)
   if(LIBC_GPU_TARGET_ARCHITECTURE_IS_AMDGPU)
     target_compile_options(${fq_build_target_name} PRIVATE
                            -nogpulib -mcpu=${LIBC_GPU_TARGET_ARCHITECTURE}
-                           -flto --target=${LIBC_GPU_TARGET_TRIPLE})
+                           -flto --target=${LIBC_GPU_TARGET_TRIPLE}
+                           -mcode-object-version=${LIBC_GPU_CODE_OBJECT_VERSION})
   elseif(LIBC_GPU_TARGET_ARCHITECTURE_IS_NVPTX)
     get_nvptx_compile_options(nvptx_options ${LIBC_GPU_TARGET_ARCHITECTURE})
     target_compile_options(${fq_build_target_name} PRIVATE
@@ -572,7 +579,9 @@ set(LIBC_HERMETIC_TEST_COMPILE_OPTIONS ${LIBC_COMPILE_OPTIONS_DEFAULT}
 # The GPU build requires overriding the default CMake triple and architecture.
 if(LIBC_GPU_TARGET_ARCHITECTURE_IS_AMDGPU)
   list(APPEND LIBC_HERMETIC_TEST_COMPILE_OPTIONS
-       -nogpulib -mcpu=${LIBC_GPU_TARGET_ARCHITECTURE} -flto --target=${LIBC_GPU_TARGET_TRIPLE})
+       -nogpulib -mcpu=${LIBC_GPU_TARGET_ARCHITECTURE} -flto
+       --target=${LIBC_GPU_TARGET_TRIPLE}
+       -mcode-object-version=${LIBC_GPU_CODE_OBJECT_VERSION})
 elseif(LIBC_GPU_TARGET_ARCHITECTURE_IS_NVPTX)
   get_nvptx_compile_options(nvptx_options ${LIBC_GPU_TARGET_ARCHITECTURE})
   list(APPEND LIBC_HERMETIC_TEST_COMPILE_OPTIONS

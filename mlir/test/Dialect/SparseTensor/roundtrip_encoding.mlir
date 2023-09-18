@@ -55,38 +55,42 @@ func.func private @sparse_dcsc(tensor<?x?xf32, #DCSC>)
 // -----
 
 #COO = #sparse_tensor.encoding<{
-  lvlTypes = [ "compressed-nu-no", "singleton-no" ]
+  map = (d0, d1) -> (d0 : compressed(nonunique, nonordered), d1 : singleton(nonordered))
 }>
 
 // CHECK-LABEL: func private @sparse_coo(
-// CHECK-SAME: tensor<?x?xf32, #sparse_tensor.encoding<{ lvlTypes = [ "compressed-nu-no", "singleton-no" ] }>>)
+// CHECK-SAME: tensor<?x?xf32, #sparse_tensor.encoding<{ lvlTypes = [ "compressed_nu_no", "singleton_no" ] }>>)
 func.func private @sparse_coo(tensor<?x?xf32, #COO>)
 
 // -----
 
 #BCOO = #sparse_tensor.encoding<{
-  lvlTypes = [ "dense", "compressed-hi-nu", "singleton" ]
+  map = (d0, d1, d2) -> (d0 : dense, d1 : compressed(nonunique, high), d2 : singleton)
 }>
 
 // CHECK-LABEL: func private @sparse_bcoo(
-// CHECK-SAME: tensor<?x?x?xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed-hi-nu", "singleton" ] }>>)
+// CHECK-SAME: tensor<?x?x?xf32, #sparse_tensor.encoding<{ lvlTypes = [ "dense", "compressed_hi_nu", "singleton" ] }>>)
 func.func private @sparse_bcoo(tensor<?x?x?xf32, #BCOO>)
 
 // -----
 
 #SortedCOO = #sparse_tensor.encoding<{
-  lvlTypes = [ "compressed-nu", "singleton" ]
+  map = (d0, d1) -> (d0 : compressed(nonunique), d1 : singleton)
 }>
 
 // CHECK-LABEL: func private @sparse_sorted_coo(
-// CHECK-SAME: tensor<10x10xf64, #sparse_tensor.encoding<{ lvlTypes = [ "compressed-nu", "singleton" ] }>>)
+// CHECK-SAME: tensor<10x10xf64, #sparse_tensor.encoding<{ lvlTypes = [ "compressed_nu", "singleton" ] }>>)
 func.func private @sparse_sorted_coo(tensor<10x10xf64, #SortedCOO>)
 
 // -----
 
 #BCSR = #sparse_tensor.encoding<{
-   lvlTypes = [ "compressed", "compressed", "dense", "dense" ],
-   dimToLvl  = affine_map<(i, j) -> (i floordiv 2, j floordiv 3, i mod 2, j mod 3)>
+   map = ( i, j ) ->
+      ( i floordiv 2 : compressed,
+        j floordiv 3 : compressed,
+        i mod 2      : dense,
+        j mod 3      : dense
+      )
 }>
 
 // CHECK-LABEL: func private @sparse_bcsr(
@@ -144,7 +148,7 @@ func.func private @sparse_slice(tensor<?x?xf64, #CSR_SLICE>)
 // below) to encode a 2D matrix, but it would require dim2lvl mapping which is not ready yet.
 // So we take the simple path for now.
 #NV_24= #sparse_tensor.encoding<{
-  lvlTypes = [ "dense", "compressed24" ],
+  map = (d0, d1) -> (d0 : dense, d1 : compressed(block2_4))
 }>
 
 // CHECK-LABEL: func private @sparse_2_out_of_4(
@@ -195,7 +199,7 @@ func.func private @BCSR_explicit(%arg0: tensor<?x?xf64, #BCSR_explicit>) {
   map = ( i, j ) ->
   ( i            : dense,
     j floordiv 4 : dense,
-    j mod 4      : compressed24
+    j mod 4      : compressed(block2_4)
   )
 }>
 
