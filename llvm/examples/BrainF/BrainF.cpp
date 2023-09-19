@@ -126,7 +126,7 @@ void BrainF::header(LLVMContext& C) {
   endbb = BasicBlock::Create(C, label, brainf_func);
 
   //call free(i8 *%arr)
-  builder->SetInsertPoint(endbb->getTerminator());
+  builder->SetInsertPoint(endbb->end());
   builder->CreateFree(ptr_arr);
   
 
