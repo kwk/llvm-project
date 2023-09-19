@@ -1401,6 +1401,7 @@ bool WebAssemblyLowerEmscriptenEHSjLj::runSjLjOnFunction(Function &F) {
     if (auto *CB = dyn_cast<CallBase>(I))
       if (auto Bundle = CB->getOperandBundle(LLVMContext::OB_funclet))
         Bundles.push_back(OperandBundleDef(*Bundle));
+    IRB.SetInsertPoint(I);
     auto *Free = IRB.CreateFree(SetjmpTable, Bundles);
     Free->setDebugLoc(DL);
   }
