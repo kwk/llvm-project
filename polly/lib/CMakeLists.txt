@@ -39,8 +39,12 @@ set(POLLY_COMPONENTS
 
 # Use an object-library to add the same files to multiple libs without requiring
 # the sources them to be recompiled for each of them.
+if (POLLY_BUILD_SHARED_POLLY)
+  set(POLLY_LINK_TYPE SHARED)
+endif()
 add_llvm_pass_plugin(Polly
   NO_MODULE
+  ${POLLY_LINK_TYPE}
   SUBPROJECT Polly
   Analysis/DependenceInfo.cpp
   Analysis/PolyhedralInfo.cpp
@@ -120,7 +124,11 @@ if (WIN32 OR CYGWIN OR NOT LLVM_ENABLE_PIC)
   add_custom_target(LLVMPolly)
   set_target_properties(LLVMPolly PROPERTIES FOLDER "Polly/Loadable Modules")
 else ()
+  if (POLLY_BUILD_SHARED_LLVMPOLLY)
+    set(LLVM_POLLY_LINK_TYPE SHARED)
+  endif()
   add_polly_loadable_module(LLVMPolly
+    ${LLVM_POLLY_LINK_TYPE}
     Plugin/Polly.cpp
     $<TARGET_OBJECTS:obj.Polly>
   )

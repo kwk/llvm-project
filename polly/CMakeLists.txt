@@ -40,9 +40,17 @@ if(POLLY_STANDALONE_BUILD)
 
   # Set directory for polly-isl-test.
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+
+  set(POLLY_BUILD_SHARED_POLLY 0 CACHE BOOL "Builds Polly shared library.")
+  set(POLLY_BUILD_SHARED_LLVMPOLLY 0 CACHE BOOL "Builds LLVMPolly shared library.")
+  set(POLLY_BUILD_SHARED_POLLYISL 0 CACHE BOOL "Builds PollyISL shared library.")
 else ()
   set(LLVM_SOURCE_ROOT "${LLVM_MAIN_SRC_DIR}")
   set(POLLY_GTEST_AVAIL 1)
+
+  set(POLLY_BUILD_SHARED_POLLY 1 CACHE BOOL "Builds Polly shared library.")
+  set(POLLY_BUILD_SHARED_LLVMPOLLY 1 CACHE BOOL "Builds LLVMPolly shared library.")
+  set(POLLY_BUILD_SHARED_POLLYISL 1 CACHE BOOL "Builds PollyISL shared library.")
 endif ()
 
 set(POLLY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

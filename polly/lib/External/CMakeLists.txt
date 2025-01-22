@@ -283,7 +283,11 @@ if (POLLY_BUNDLED_ISL)
     isl/imath/imrat.c
     )
 
+  if (POLLY_BUILD_SHARED_POLLYISL)
+    set(POLLY_ISL_LINK_TYPE SHARED)
+  endif()
   add_polly_library(PollyISL
+    ${POLLY_ISL_LINK_TYPE}
     ${ISL_FILES}
     )
 
