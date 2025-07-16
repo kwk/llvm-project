@@ -21,6 +21,8 @@
 #include <mutex>
 #include <set>
 
+#include <sstream>
+
 #if defined(__has_include)
 #if __has_include(<sanitizer / lsan_interface.h>)
 #include <sanitizer/lsan_interface.h>
@@ -508,6 +510,27 @@ static void WriteEdgeToMutationGraphFile(const std::string &MutationGraphFile,
   AppendToFile(OutputString, MutationGraphFile);
 }
 
+std::string Fuzzer::RunOneAndCollectCovAsStr(const uint8_t *Data,
+                                             size_t Size) {
+  assert(Size && Size < std::numeric_limits<uint32_t>::max());
+  ExecuteCallback(Data, Size);
+
+  std::stringstream SS;
+
+  TPC.CollectFeatures([&](uint32_t Feature) {
+    if (SS.str().empty()) {
+      SS << "\"";
+      SS << std::to_string(Feature);
+    } else {
+      SS << ";";
+      SS << std::to_string(Feature);
+    }
+  });
+  SS << "\"";
+
+  return SS.str();
+}
+
 bool Fuzzer::RunOne(const uint8_t *Data, size_t Size, bool MayDeleteFile,
                     InputInfo *II, bool ForceAddToCorpus,
                     bool *FoundUniqFeatures) {
@@ -536,6 +559,27 @@ bool Fuzzer::RunOne(const uint8_t *Data, size_t Size, bool MayDeleteFile,
     *FoundUniqFeatures = FoundUniqFeaturesOfII;
   PrintPulseAndReportSlowInput(Data, Size);
   size_t NumNewFeatures = Corpus.NumFeatureUpdates() - NumUpdatesBefore;
+
+  // Custom crossover fitness measurement
+  size_t NumPreservedFeatures = 0;
+  if (Options.DoCrossOver && Options.CrossOverCustomFitnessFn &&
+      !CrossOverUnitFeatures.empty()) {
+    UniqFeatureSetTmp.clear();
+    TPC.CollectFeatures([&](uint32_t Feature) {
+      auto iter = CrossOverUnitFeatures.find(Feature);
+      if (iter != CrossOverUnitFeatures.end()) {
+        NumPreservedFeatures++;
+      } else {
+        UniqFeatureSetTmp.push_back(Feature);
+      }
+    });
+    size_t NumNewCrossOverFeatures = UniqFeatureSetTmp.size();
+
+    Printf("CROSS    perserved: %zd/%zd new: %zd uniq: %zd\n",
+           NumPreservedFeatures, CrossOverUnitFeatures.size(),
+           NumNewCrossOverFeatures, NumNewFeatures);
+  }
+
   if (NumNewFeatures || ForceAddToCorpus) {
     TPC.UpdateObservedPCs();
     auto NewII =
@@ -718,6 +762,13 @@ void Fuzzer::TryDetectingAMemoryLeak(const uint8_t *Data, size_t Size,
   }
 }
 
+void Fuzzer::CollectCrossOverFeatures(const uint8_t *Data, size_t Size) {
+  ExecuteCallback(Data, Size);
+  TPC.CollectFeatures([&](uint32_t Feature) {
+    CrossOverUnitFeatures.insert(Feature);
+  });
+}
+
 void Fuzzer::MutateAndTestOne() {
   MD.StartMutationSequence();
 
@@ -726,13 +777,27 @@ void Fuzzer::MutateAndTestOne() {
     auto &CrossOverII = Corpus.ChooseUnitToCrossOverWith(
         MD.GetRand(), Options.CrossOverUniformDist);
     MD.SetCrossOverWith(&CrossOverII.U);
+    if (Options.CrossOverCustomFitnessFn) {
+      const auto &CrossOverU = CrossOverII.U;
+      CrossOverUnitFeatures.clear();
+      memcpy(BaseSha1, CrossOverII.Sha1, sizeof(BaseSha1));
+      assert(CurrentUnitData);
+      size_t Size = CrossOverU.size();
+      assert(Size <= MaxInputLen && "Oversized Unit");
+      memcpy(CurrentUnitData, CrossOverU.data(), Size);
+      CollectCrossOverFeatures(CurrentUnitData, Size);
+    }
   }
+
   const auto &U = II.U;
   memcpy(BaseSha1, II.Sha1, sizeof(BaseSha1));
   assert(CurrentUnitData);
   size_t Size = U.size();
   assert(Size <= MaxInputLen && "Oversized Unit");
   memcpy(CurrentUnitData, U.data(), Size);
+
+  if (Options.DoCrossOver && Options.CrossOverCustomFitnessFn)
+    CollectCrossOverFeatures(CurrentUnitData, Size);
 
   assert(MaxMutationLen > 0);
 

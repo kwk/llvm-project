@@ -28,6 +28,7 @@
 #include <string>
 #include <thread>
 #include <fstream>
+#include <sys/stat.h>
 
 // This function should be present in the libFuzzer so that the client
 // binary can test for its existence.
@@ -328,6 +329,26 @@ int RunOneTest(Fuzzer *F, const char *InputFilePath, size_t MaxLen) {
   } else {
     F->TryDetectingAMemoryLeak(U.data(), U.size(), true);
   }
+  return 0;
+}
+
+int RunOneTestAndLogCov(Fuzzer *F, std::string &Path, std::ofstream &CSVFile,
+                        const char *InputFilePath, size_t MaxLen) {
+  Unit U = FileToVector(InputFilePath);
+  if (MaxLen && MaxLen < U.size())
+    U.resize(MaxLen);
+
+  Printf("Trying: %s\n", Path.c_str());
+  std::string CovStr = F->RunOneAndCollectCovAsStr(U.data(), U.size());
+
+  size_t ExtIndex = Path.find_last_of(".");
+  size_t FilenameStartIndex = Path.find_last_of("/") + 1;
+  assert(ExtIndex != std::string::npos);
+  assert(FilenameStartIndex != std::string::npos);
+  std::string Filename = Path.substr(FilenameStartIndex,
+                                     ExtIndex - FilenameStartIndex);
+  CSVFile << Filename.c_str() << "," << CovStr << "\n";
+
   return 0;
 }
 
@@ -689,6 +710,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   Options.MaxTotalTimeSec = Flags.max_total_time;
   Options.DoCrossOver = Flags.cross_over;
   Options.CrossOverUniformDist = Flags.cross_over_uniform_dist;
+  Options.CrossOverCustomFitnessFn = Flags.cross_over_custom_fitness_fn;
   Options.MutateDepth = Flags.mutate_depth;
   Options.ReduceDepth = Flags.reduce_depth;
   Options.UseCounters = Flags.use_counters;
@@ -847,6 +869,68 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
 
   if (Flags.cleanse_crash)
     return CleanseCrashInput(Args, Options);
+
+  if (RunIndividualFiles && Flags.get_individual_file_cov) {
+    Options.SaveArtifacts = false;
+    Printf("Collecting coverage for %zd files.\n", Inputs->size());
+
+    std::string InputPath = (*Inputs)[0];
+    size_t SeedDirEnd = InputPath.find_last_of("/") + 1;
+    assert(SeedDirEnd != std::string::npos);
+    std::string OutputDir = InputPath.substr(0, SeedDirEnd);
+    std::string OutputCSV = OutputDir + "unittest_cov.csv";
+    std::string ProcessedOutputs = OutputDir + "processed.txt";
+
+    auto FileExists = [](std::string &Filename) -> bool {
+      struct stat buffer;
+      return (stat (Filename.c_str(), &buffer) == 0);
+    };
+
+    std::fstream ProcessedOutputsFile;
+    auto FileAlreadyProcessed = [&](std::string &Filename) -> bool {
+      ProcessedOutputsFile.open(ProcessedOutputs, std::fstream::in);
+      std::string Line;
+      while(ProcessedOutputsFile) {
+        std::getline(ProcessedOutputsFile, Line);
+        if (Line == Filename) {
+          ProcessedOutputsFile.close();
+          return true;
+        }
+      }
+      ProcessedOutputsFile.close();
+      return false;
+    };
+
+    std::ofstream CSVFile;
+    if (FileExists(OutputCSV)) {
+      CSVFile.open(OutputCSV, std::ofstream::app);
+      CSVFile << "\n";
+    } else {
+      CSVFile.open(OutputCSV, std::ofstream::trunc);
+      CSVFile << "id,coverage\n";
+    }
+
+    for (auto &Path : *Inputs) {
+      if (FileAlreadyProcessed(Path)) {
+        continue;
+      }
+      auto StartTime = system_clock::now();
+      RunOneTestAndLogCov(F, Path, CSVFile, Path.c_str(), Options.MaxLen);
+      auto StopTime = system_clock::now();
+      auto MS = duration_cast<milliseconds>(StopTime - StartTime).count();
+
+      ProcessedOutputsFile.open(ProcessedOutputs,
+                                std::fstream::out | std::fstream::app);
+      assert(ProcessedOutputsFile);
+      ProcessedOutputsFile << Path.c_str() << "\n";
+      ProcessedOutputsFile.close();
+
+      Printf("Executed %s in %zd ms\n", Path.c_str(), (long)MS);
+    }
+
+    CSVFile.close();
+    exit(0);
+  }
 
   if (RunIndividualFiles) {
     Options.SaveArtifacts = false;

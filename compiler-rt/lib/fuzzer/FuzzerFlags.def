@@ -37,6 +37,11 @@ FUZZER_FLAG_INT(cross_over_uniform_dist, 0, "Experimental. If 1, use a "
   "|keep_seed==1|; all the initial seed inputs, even though they do not "
   "increase coverage because they are not properly formed, will still be "
   "chosen as an input to cross over with.")
+FUZZER_FLAG_INT(cross_over_custom_fitness_fn, 0, "If 1, use a custom fitness"
+  "function when deciding whether to add a crossover result to the corpus.")
+FUZZER_FLAG_INT(get_individual_file_cov, 0, "If 1, perform a run over each file"
+  "in the input seed directory and collect its coverage. All coverage info is"
+  "then stored inside of a .csv file, which is created in the seed directory.")
 
 FUZZER_FLAG_INT(mutate_depth, 5,
             "Apply this number of consecutive mutations to each input.")
