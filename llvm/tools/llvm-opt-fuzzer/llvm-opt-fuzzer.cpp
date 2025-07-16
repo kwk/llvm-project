@@ -14,11 +14,13 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/CodeGen/CommandFlags.h"
 #include "llvm/FuzzMutate/FuzzerCLI.h"
+#include "llvm/FuzzMutate/IRCrossOver.h"
 #include "llvm/FuzzMutate/IRMutator.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
@@ -34,9 +36,27 @@ static cl::opt<std::string>
 static cl::opt<std::string> PassPipeline(
     "passes",
     cl::desc("A textual description of the pass pipeline for testing"));
+static cl::opt<bool> Verbose("v",
+                             cl::desc("Prints debug info on action taken"));
+static cl::opt<bool> NoInline("noinline",
+                              cl::desc("Disables the inlining mutation"));
+static cl::opt<bool> NoSequence("nosequence",
+                                cl::desc("Disables the sequencing mutation"));
 
+static std::unique_ptr<IRCrossOver> CrossOver;
 static std::unique_ptr<IRMutator> Mutator;
 static std::unique_ptr<TargetMachine> TM;
+
+std::unique_ptr<IRCrossOver> createOptCrossOver() {
+  std::vector<std::unique_ptr<IRCrossOverStrategy>> Strategies;
+  if (!NoInline)
+    Strategies.push_back(
+      std::make_unique<FunctionInlineStrategy>());
+  if (!NoSequence)
+    Strategies.push_back(
+      std::make_unique<FunctionSequencingStrategy>());
+  return std::make_unique<IRCrossOver>(std::move(Strategies));
+}
 
 std::unique_ptr<IRMutator> createOptMutator() {
   std::vector<TypeGetter> Types{
@@ -52,11 +72,85 @@ std::unique_ptr<IRMutator> createOptMutator() {
   return std::make_unique<IRMutator>(std::move(Types), std::move(Strategies));
 }
 
+extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
+                                            const uint8_t *Data2, size_t Size2,
+                                            uint8_t *Out, size_t MaxOutSize,
+                                            unsigned int Seed) {
+  assert(CrossOver &&
+      "IR crossover should have been created during fuzzer initialization");
+
+  if (Verbose)
+    dbgs() << "CUSTOM CROSS OVER HIT\n";
+
+  if (Size1 <= 1 || Size2 <= 1) {
+    return 0;
+  }
+
+  LLVMContext Context;
+  auto M1 = parseAndVerify(Data1, Size1, Context);
+  auto M2 = parseAndVerify(Data2, Size2, Context);
+
+  if (!M1) {
+    errs() << "error: cross over input module M1 is broken!\n";
+    return 0;
+  }
+
+   if (!M2) {
+    errs() << "error: cross over input module M2 is broken!\n";
+    return 0;
+  }
+
+  std::unique_ptr<Module> Composite =
+      CrossOver->crossOverModules(std::move(M1), std::move(M2), Seed);
+
+  if (!Composite) {
+    errs() << "cross over failed to find a valid mutation\n";
+    return 0;
+  }
+
+  if (verifyModule(*Composite, &errs())) {
+    errs() << "cross over result doesn't pass verification\n";
+#ifndef NDEBUG
+    Composite->dump();
+#endif
+    // Avoid adding incorrect test cases to the corpus.
+    return 0;
+  }
+
+  std::string Buf;
+  {
+    raw_string_ostream OS(Buf);
+    WriteBitcodeToFile(*Composite, OS);
+  }
+
+  if (Buf.size() > MaxOutSize) {
+    errs() << "cross over result exceeded max size\n";
+    return 0;
+  }
+
+  auto NewM = parseAndVerify(
+      reinterpret_cast<const uint8_t*>(Buf.data()), Buf.size(), Context);
+
+  if (!NewM) {
+    errs() << "cross over failed to re-read the module\n";
+#ifndef NDEBUG
+    Composite->dump();
+#endif
+    return 0;
+  }
+
+  memcpy(Out, Buf.data(), Buf.size());
+  return Buf.size();
+}
+
 extern "C" LLVM_ATTRIBUTE_USED size_t LLVMFuzzerCustomMutator(
     uint8_t *Data, size_t Size, size_t MaxSize, unsigned int Seed) {
 
   assert(Mutator &&
          "IR mutator should have been created during fuzzer initialization");
+
+  if (Verbose)
+    dbgs() << "CUSTOM MUTATOR HIT\n";
 
   LLVMContext Context;
   auto M = parseAndVerify(Data, Size, Context);
@@ -154,11 +248,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   // Run passes which we need to test
   //
 
+  if (Verbose)
+    dbgs() << "TESTING ONE INPUT ON THE PASS PIPELINE\n";
+
   MPM.run(*M, MAM);
 
   // Check that passes resulted in a correct code
   if (verifyModule(*M, &errs())) {
-    errs() << "Transformation resulted in an invalid module\n";
+    errs() << "error: Transformation resulted in an invalid module\n";
     abort();
   }
 
@@ -174,6 +271,15 @@ static void handleLLVMFatalError(void *, const char *Message, bool) {
 
 extern "C" LLVM_ATTRIBUTE_USED int LLVMFuzzerInitialize(int *argc,
                                                         char ***argv) {
+
+  if (NoInline && NoSequence) {
+    dbgs() << "Cannot disable both the inlining and sequencing mutations!\n";
+    abort();
+  }
+
+  if (Verbose)
+    dbgs() << "INITIALIZING FUZZER...\n";
+
   EnableDebugBuffering = true;
   StringRef ExecName = *argv[0];
 
@@ -191,6 +297,16 @@ extern "C" LLVM_ATTRIBUTE_USED int LLVMFuzzerInitialize(int *argc,
 
   handleExecNameEncodedOptimizerOpts(ExecName);
   parseFuzzerCLOpts(*argc, *argv);
+  
+  PassRegistry &Registry = *PassRegistry::getPassRegistry();
+  initializeCore(Registry);
+  initializeScalarOpts(Registry);
+  initializeVectorization(Registry);
+  initializeIPO(Registry);
+  initializeAnalysis(Registry);
+  initializeTransformUtils(Registry);
+  initializeInstCombine(Registry);
+  initializeTarget(Registry);
 
   // Create TargetMachine
   //
@@ -221,6 +337,7 @@ extern "C" LLVM_ATTRIBUTE_USED int LLVMFuzzerInitialize(int *argc,
   //
 
   Mutator = createOptMutator();
+  CrossOver = createOptCrossOver();
 
   return 0;
 }

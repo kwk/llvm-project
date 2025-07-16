@@ -73,6 +73,8 @@ public:
               bool *FoundUniqFeatures = nullptr);
   void TPCUpdateObservedPCs();
 
+  std::string RunOneAndCollectCovAsStr(const uint8_t *Data, size_t Size);
+
   // Merge Corpora[1:] into Corpora[0].
   void Merge(const std::vector<std::string> &Corpora);
   void CrashResistantMergeInternalStep(const std::string &ControlFilePath,
@@ -113,6 +115,8 @@ private:
   void DumpCurrentUnit(const char *Prefix);
   void DeathCallback();
 
+  void CollectCrossOverFeatures(const uint8_t *Data, size_t Size);
+
   void AllocateCurrentUnitData();
   uint8_t *CurrentUnitData = nullptr;
   std::atomic<size_t> CurrentUnitSize;
@@ -146,6 +150,10 @@ private:
   size_t TmpMaxMutationLen = 0;
 
   std::vector<uint32_t> UniqFeatureSetTmp;
+
+  // Set of all features of the inputs passed into a crossover mutation.
+  // Used to calculate a fitness score.
+  std::unordered_set<uint32_t> CrossOverUnitFeatures;
 
   // Need to know our own thread.
   static thread_local bool IsMyThread;

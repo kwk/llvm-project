@@ -14,6 +14,8 @@ add_llvm_component_library(LLVMFuzzerCLI
 
 # Library for using LLVM IR together with fuzzers.
 add_llvm_component_library(LLVMFuzzMutate
+  ComposeTests.cpp
+  IRCrossOver.cpp
   IRMutator.cpp
   OpDescriptor.cpp
   Operations.cpp
