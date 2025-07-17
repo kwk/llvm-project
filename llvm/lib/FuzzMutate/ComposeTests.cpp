@@ -789,7 +789,9 @@ bool FunctionInliner::inlineFunction(
   // Finally inline the function
   Function *Caller = SrcFuncCI->getCaller();
   InlineFunctionInfo IFI(
-      /*cg=*/nullptr, GetAssumptionCache, &PSI,
+      // As of fa6ea7a419f37befbed04368bcb8af4c718facbb the CallGraph parameter is gone.
+      // /*cg=*/nullptr, 
+      GetAssumptionCache, &PSI,
       &FAM.getResult<BlockFrequencyAnalysis>(*Caller),
       &FAM.getResult<BlockFrequencyAnalysis>(*SrcFunc));
   InlineResult Res = InlineFunction(
@@ -984,7 +986,7 @@ std::unique_ptr<Module> FunctionInliner::inlineFunctions() {
 
 bool FunctionSequencer::isUnsupportedArgType(Type *Ty) {
   switch (Ty->getTypeID()) {
-  case Type::X86_MMXTyID:
+  // case Type::X86_MMXTyID:
   case Type::X86_AMXTyID:
   case Type::TargetExtTyID:
   case Type::TypedPointerTyID:
