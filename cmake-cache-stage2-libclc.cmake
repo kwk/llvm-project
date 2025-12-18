@@ -29,7 +29,5 @@ set(LLVM_ENABLE_ZLIB FORCE_ON CACHE BOOL "")
 set(LLVM_ENABLE_ZSTD FORCE_ON CACHE BOOL "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "")
 
-# Use lld from stage 1
-if(DEFINED STAGE1_DIR)
-    set(LLVM_USE_LINKER "${STAGE1_DIR}/bin/ld.lld" CACHE STRING "")
-endif()
+# Note: Not using lld from stage 1 to avoid issues if lld wasn't built/installed
+# The default system linker works fine for non-instrumented libclc builds

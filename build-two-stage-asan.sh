@@ -63,7 +63,9 @@ ninja -j "${JOBS}" -k 0 || true
 
 # Install stage 1
 echo "Installing stage 1..."
-ninja install || true
+if ! ninja install; then
+    echo "WARNING: Stage 1 install had errors, but continuing..."
+fi
 
 cd ..
 
@@ -75,11 +77,18 @@ echo "========================================="
 # Verify stage 1 clang exists
 if [[ ! -f "${STAGE1_INSTALL_DIR}/bin/clang" ]]; then
     echo "ERROR: Stage 1 clang not found at ${STAGE1_INSTALL_DIR}/bin/clang"
-    echo "Stage 1 build may have failed. Check the build log."
+    echo "Stage 1 build or install failed. Check the build log above."
     exit 1
 fi
 
-echo "Using instrumented clang from: ${STAGE1_INSTALL_DIR}/bin/clang"
+echo "✓ Stage 1 clang found: ${STAGE1_INSTALL_DIR}/bin/clang"
+
+# Check if lld was also built (informational only)
+if [[ -f "${STAGE1_INSTALL_DIR}/bin/ld.lld" ]]; then
+    echo "✓ Stage 1 lld also available (not used in stage 2)"
+else
+    echo "ℹ Stage 1 lld not found (not needed for stage 2)"
+fi
 
 # Clean and create stage 2 build directory
 if [[ "${CLEAN_BUILD:-0}" == "1" ]]; then
