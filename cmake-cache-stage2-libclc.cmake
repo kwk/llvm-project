@@ -14,10 +14,18 @@ if(DEFINED STAGE1_DIR)
     set(CMAKE_CXX_COMPILER "${STAGE1_DIR}/bin/clang++" CACHE STRING "")
 endif()
 
-# Only build libclc in stage 2 (we already have clang from stage 1)
-set(LLVM_ENABLE_PROJECTS "" CACHE STRING "")
-set(LLVM_ENABLE_RUNTIMES "libclc" CACHE STRING "")
+# Configure clang and libclc as projects
+# Note: clang is only configured to satisfy libclc's requirements - we don't build it
+# libclc will use the instrumented stage 1 clang via LIBCLC_CUSTOM_LLVM_TOOLS_BINARY_DIR
+set(LLVM_ENABLE_PROJECTS "clang;libclc" CACHE STRING "")
+set(LLVM_ENABLE_RUNTIMES "" CACHE STRING "")
 set(LIBCLC_USE_SPIRV_BACKEND ON CACHE BOOL "")
+
+# CRITICAL: Tell libclc to use the stage 1 instrumented clang instead of building/using stage 2 clang
+# This ensures the SPIRV backend is monitored by ASan during libclc compilation
+if(DEFINED STAGE1_DIR)
+    set(LIBCLC_CUSTOM_LLVM_TOOLS_BINARY_DIR "${STAGE1_DIR}/bin" CACHE PATH "")
+endif()
 
 # Target configuration (same as stage 1)
 set(LLVM_TARGETS_TO_BUILD "X86;AMDGPU;NVPTX;SPIRV" CACHE STRING "")

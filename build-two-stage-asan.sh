@@ -107,9 +107,11 @@ cmake -G Ninja \
     ../llvm
 
 # Build stage 2 (this is where ASan will detect leaks in SPIRV backend)
-echo "Building stage 2 (libclc with SPIRV backend)..."
+# Only build libclc target - we don't need to build clang in stage 2
+# clang is only configured to satisfy libclc's requirements
+echo "Building stage 2 (libclc with SPIRV backend using instrumented stage 1 clang)..."
 echo "Any memory leaks in SPIRV will be logged to ${SANITIZER_LOG}*"
-ninja -j "${JOBS}" -k 0 || true
+ninja -j "${JOBS}" libclc -k 0 || true
 
 cd ..
 
