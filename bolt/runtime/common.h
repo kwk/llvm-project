@@ -196,18 +196,6 @@ char *strCopy(char *OutBuf, const char *Str, int32_t Size = BufSize) {
   return OutBuf;
 }
 
-/// Compare two strings, at most Num bytes.
-int strnCmp(const char *Str1, const char *Str2, size_t Num) {
-  while (Num && *Str1 && (*Str1 == *Str2)) {
-    Num--;
-    Str1++;
-    Str2++;
-  }
-  if (Num == 0)
-    return 0;
-  return *(unsigned char *)Str1 - *(unsigned char *)Str2;
-}
-
 uint32_t strLen(const char *Str) {
   uint32_t Size = 0;
   while (*Str++)
