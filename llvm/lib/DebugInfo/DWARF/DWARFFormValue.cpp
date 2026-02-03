@@ -18,6 +18,8 @@
 #include "llvm/DebugInfo/DWARF/DWARFUnit.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/Format.h"
+#include "llvm/Support/FormatAdapters.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/WithColor.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cinttypes>
@@ -353,7 +355,7 @@ bool DWARFFormValue::extractValue(const DWARFDataExtractor &Data,
 void DWARFFormValue::dumpAddress(raw_ostream &OS, uint8_t AddressSize,
                                  uint64_t Address) {
   uint8_t HexDigits = AddressSize * 2;
-  OS << format("0x%*.*" PRIx64, HexDigits, HexDigits, Address);
+  OS << formatv("0x{0:x-}", fmt_align(Address, AlignStyle::Right, HexDigits, '0'));
 }
 
 void DWARFFormValue::dumpSectionedAddress(raw_ostream &OS,
