@@ -36,6 +36,7 @@ usage() {
   echo "                (optional) default: $srcdir"
   echo " -no-doxygen    Don't build Doxygen docs"
   echo " -no-sphinx     Don't build Spinx docs"
+  echo " -no-manpages   Don't build manpages"
 }
 
 package_doxygen() {
@@ -64,6 +65,9 @@ while [ $# -gt 0 ]; do
       ;;
     -no-sphinx )
       no_sphinx="yes"
+      ;;
+    -no-manpages )
+      no_manpages="yes"
       ;;
     * )
       echo "unknown option: $1"
@@ -97,8 +101,8 @@ if [ -n "$release" ]; then
   srcdir="./llvm-project/llvm"
 fi
 
-if [ "$no_doxygen" == "yes" ] && [ "$no_sphinx" == "yes" ]; then
-  echo "You can't specify both -no-doxygen and -no-sphinx, we have nothing to build then!"
+if [ "$no_doxygen" == "yes" ] && [ "$no_sphinx" == "yes" ] && [ "$no_manpages" == "yes" ]; then
+  echo "You can't specify -no-doxygen, -no-sphinx, and -no-manpages, we have nothing to build then!"
   exit 1
 fi
 
@@ -106,6 +110,14 @@ if [ "$no_sphinx" != "yes" ]; then
   echo "Sphinx: enabled"
   sphinx_targets="docs-clang-html docs-clang-tools-html docs-flang-html docs-lld-html docs-llvm-html docs-polly-html"
   sphinx_flag=" -DLLVM_ENABLE_SPHINX=ON -DSPHINX_WARNINGS_AS_ERRORS=OFF"
+else
+  echo "Sphinx: disabled"
+fi
+
+if [ "$no_manpages" != "yes" ]; then
+  echo "Manpages: enabled"
+  manpage_targets="docs-clang-man docs-clang-tools-man docs-flang-man docs-lld-man docs-llvm-man docs-polly-man"
+  manpage_flag=" -DLLVM_ENABLE_SPHINX=ON -DSPHINX_WARNINGS_AS_ERRORS=OFF -DSPHINX_OUTPUT_MAN:BOOL=ON"
 else
   echo "Sphinx: disabled"
 fi
@@ -123,9 +135,10 @@ cmake -G Ninja $srcdir -B $builddir \
                -DCMAKE_BUILD_TYPE=Release \
                -DLLVM_BUILD_DOCS=ON \
                $sphinx_flag \
-               $doxygen_flag
+               $doxygen_flag \
+               $manpage_flag
 
-ninja -C $builddir $sphinx_targets $doxygen_targets
+ninja -C $builddir $sphinx_targets $doxygen_targets $manpage_targets
 
 cmake -G Ninja $srcdir/../runtimes -B $builddir/runtimes-doc \
                -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
@@ -135,26 +148,24 @@ cmake -G Ninja $srcdir/../runtimes -B $builddir/runtimes-doc \
 ninja -C $builddir/runtimes-doc \
                docs-libcxx-html \
 
+exit 666
+
 if [ "$no_doxygen" != "yes" ]; then
   package_doxygen llvm .
   package_doxygen clang tools/clang
   package_doxygen clang-tools-extra tools/clang/tools/extra
   package_doxygen flang tools/flang
+
+  html_dir=$builddir/html-export/
+
+  for d in docs/ tools/clang/docs/ tools/lld/docs/ tools/clang/tools/extra/docs/ tools/polly/docs/ tools/flang/docs/; do
+    mkdir -p $html_dir/$d
+    mv $builddir/$d/html/* $html_dir/$d/
+  done
+
+  # Keep the documentation for the runtimes under /projects/ to avoid breaking existing links.
+  for d in libcxx/docs/; do
+    mkdir -p $html_dir/projects/$d
+    mv $builddir/runtimes-doc/$d/html/* $html_dir/projects/$d/
+  done
 fi
-
-if [ "$no_sphinx" == "yes" ]; then
-  exit 0
-fi
-
-html_dir=$builddir/html-export/
-
-for d in docs/ tools/clang/docs/ tools/lld/docs/ tools/clang/tools/extra/docs/ tools/polly/docs/ tools/flang/docs/; do
-  mkdir -p $html_dir/$d
-  mv $builddir/$d/html/* $html_dir/$d/
-done
-
-# Keep the documentation for the runtimes under /projects/ to avoid breaking existing links.
-for d in libcxx/docs/; do
-  mkdir -p $html_dir/projects/$d
-  mv $builddir/runtimes-doc/$d/html/* $html_dir/projects/$d/
-done
