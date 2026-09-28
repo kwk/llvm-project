@@ -1,0 +1,11 @@
+# This file allows users to call find_package(Libclc) and discover the
+# installed libclc libraries.
+
+@LIBCLC_CONFIG_CODE@
+
+set(LIBCLC_VERSION @LLVM_VERSION_MAJOR@.@LLVM_VERSION_MINOR@.@LLVM_VERSION_PATCH@)
+set(LIBCLC_TARGETS @LIBCLC_TARGET@)
+
+set(LIBCLC_INSTALL_DIR "@LIBCLC_CONFIG_LIBRARY_DIR@")
+
+set(LIBCLC_CMAKE_DIR "@LIBCLC_CONFIG_CMAKE_DIR@")

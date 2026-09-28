@@ -15,7 +15,13 @@ set(LLVM_SUBPROJECT_TITLE "libclc")
 set(CMAKE_CXX_STANDARD 17)
 
 # Add path for custom modules
-list( INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" )
+if(NOT DEFINED LLVM_COMMON_CMAKE_UTILS)
+  set(LLVM_COMMON_CMAKE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
+endif()
+list( INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${LLVM_COMMON_CMAKE_UTILS}/Modules"
+)
 
 enable_language( CLC )
 
@@ -187,6 +193,8 @@ set(common_defs
   __CLC_PRIVATE_ADDRSPACE_VAL=${private_addrspace_val}
   __CLC_GENERIC_ADDRSPACE_VAL=${generic_addrspace_val}
 )
+
+add_subdirectory(cmake/modules)
 
 add_custom_target(libclc ALL)
 add_custom_target(libclc-opencl-builtins COMMENT "Build libclc OpenCL builtins")
